@@ -166,7 +166,7 @@
         </button>
       </div>
 
-      <!-- PESTAÑAS -->
+      <!-- SELECTOR DE PESTAÑAS -->
       <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
         <button onclick="cambiarPestanaHome('tab-triaje')" id="btn-tab-triaje" class="py-2.5 rounded-xl bg-white text-teal-800 shadow-sm transition">
           🩺 Nueva Consulta
@@ -176,7 +176,7 @@
         </button>
       </div>
 
-      <!-- PESTAÑA NUEVA CONSULTA -->
+      <!-- PESTAÑA 1: NUEVA CONSULTA -->
       <div id="tab-triaje" class="flex-1 flex flex-col justify-between space-y-4">
         <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-3.5 rounded-2xl text-xs space-y-1.5">
           <div class="flex items-center justify-between text-teal-900 font-bold">
@@ -204,7 +204,7 @@
         </button>
       </div>
 
-      <!-- PESTAÑA HISTORIAL -->
+      <!-- PESTAÑA 2: HISTORIAL -->
       <div id="tab-historial" class="hidden flex-1 flex flex-col space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Historial Clínico del Mes</h3>
@@ -240,19 +240,16 @@
             <p class="text-[11px] text-slate-500 mt-0.5">Mueve tu dedo sobre las cámaras hasta que el círculo se vuelva <strong>completamente rojo</strong>.</p>
           </div>
 
-          <!-- VISOR DE CÁMARA EN VIVO (PARA ENCONTRAR EL LENTE ACTIVO) -->
           <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 transition-colors duration-300 shadow-lg flex items-center justify-center bg-black" id="ppg-camera-box">
-            <!-- VIDEO VISIBLE PARA QUE EL USUARIO VEA CUÁL LENTE ESTÁ ACTIVO -->
             <video id="ppg-video" playsinline autoplay muted class="w-full h-full object-cover"></video>
             <canvas id="ppg-raw-canvas" width="40" height="40" class="hidden"></canvas>
             
-            <!-- INDICADOR DE BLOQUEO EN EL CENTRO -->
             <div id="ppg-lock-badge" class="absolute bottom-2 bg-slate-900/80 px-2 py-0.5 rounded-full text-[9px] font-bold text-amber-400">
               Cubre el lente
             </div>
           </div>
 
-          <!-- PANTALLA OSCILOSCOPIO TIPO MONITOR MÉDICO -->
+          <!-- OSCILOSCOPIO -->
           <div class="relative w-full h-24 bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 shadow-inner flex flex-col justify-between p-2">
             <div class="flex items-center justify-between text-[10px] text-emerald-400 font-mono z-10">
               <span class="flex items-center space-x-1">
@@ -265,7 +262,7 @@
             <canvas id="ppg-chart-canvas" width="300" height="50" class="w-full h-12"></canvas>
 
             <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono z-10">
-              <span id="ppg-cobertura-status">COBERTURA: ESPERANDO DEDO</span>
+              <span id="ppg-cobertura-status">COBERTURA: BUSCANDO LENTE</span>
               <span id="ppg-latidos-label">0/8 LATIDOS</span>
             </div>
           </div>
@@ -275,7 +272,7 @@
               <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-100"></div>
             </div>
             <p id="ppg-status" class="text-[11px] font-bold text-amber-600">
-              Buscando lente activo... mueve tu dedo frente a la cámara.
+              Buscando lente activo... mueve tu dedo.
             </p>
           </div>
 
@@ -287,17 +284,17 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE VOZ EN TIEMPO REAL (STREAMING DE AUDIO) -->
+        <!-- FASE 2: RELATO DE VOZ EN TIEMPO REAL (UN TOQUE PARA INICIAR, UN TOQUE PARA PARAR) -->
         <div id="step-sintomas" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
               Paso 2: ¿Qué sientes?
             </span>
             <h3 class="font-extrabold text-slate-800 text-sm mt-1.5">Describe tu molestia</h3>
-            <p class="text-[11px] text-slate-500">Toca el micrófono para hablar con tranquilidad. Se transcribirá en tiempo real.</p>
+            <p class="text-[11px] text-slate-500">Toca el micrófono una vez para hablar y tócalo de nuevo al terminar.</p>
           </div>
 
-          <!-- BOTÓN DE MICRÓFONO BIDIRECCIONAL -->
+          <!-- BOTÓN TOGGLE MICRÓFONO -->
           <div class="flex flex-col items-center justify-center space-y-2 py-1">
             <div id="voice-waves" class="hidden flex items-center space-x-1 h-7">
               <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.1s"></span>
@@ -307,18 +304,18 @@
               <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.2s"></span>
             </div>
 
-            <button id="btn-toggle-mic" onclick="toggleMicrofonoStreaming()"
-              class="w-18 h-18 p-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer">
+            <button id="btn-toggle-mic" onclick="toggleMicrofonoDictado()" type="button"
+              class="w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer">
               <i id="mic-main-icon" data-lucide="mic" class="w-8 h-8"></i>
             </button>
             
             <p id="mic-status-label" class="text-[11px] font-bold text-slate-500">
-              Toca para encender el micrófono y hablar
+              Toca para encender el micrófono
             </p>
           </div>
 
           <div>
-            <textarea id="txt-sintomas" rows="4" placeholder="Tus palabras se irán escribiendo aquí en tiempo real a medida que hablas..." 
+            <textarea id="txt-sintomas" rows="4" placeholder="Tus palabras aparecerán aquí en tiempo real mientras hablas..." 
               class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
           </div>
 
@@ -426,10 +423,10 @@
     let ultimoPicoTiempo = 0;
     let lenteCompletamenteCubierto = false;
 
-    // VOZ STREAMING EN TIEMPO REAL
+    // VOZ TIPO GBOARD (CERO REPETICIÓN)
     let recognition = null;
-    let grabandoVoz = false;
-    let textoBaseAcumulado = "";
+    let microfonoActivo = false;
+    let textoConfirmado = ""; // Almacena el texto final seguro
 
     // CUESTIONARIO
     let preguntasActuales = [];
@@ -663,7 +660,7 @@
     // ==========================================
     function iniciarFlujoTriaje() {
       document.getElementById("txt-sintomas").value = "";
-      textoBaseAcumulado = "";
+      textoConfirmado = "";
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
       iniciarSensorPPGConVisionReal();
@@ -672,7 +669,7 @@
 
     function cerrarTriaje() {
       detenerSensorPPG();
-      detenerVozStreaming();
+      apagarMicrofono();
       document.getElementById("txt-sintomas").value = "";
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       document.getElementById("modal-triaje").classList.add("hidden");
@@ -687,7 +684,7 @@
     }
 
     // ==========================================
-    // SENSOR PPG CON VISIÓN EN VIVO Y CONTROL DE COBERTURA TOTAL
+    // SENSOR PPG CON VISIÓN EN VIVO
     // ==========================================
     async function iniciarSensorPPGConVisionReal() {
       const status = document.getElementById("ppg-status");
@@ -742,12 +739,10 @@
             const avgG = gSum / px;
             const avgB = bSum / px;
 
-            // VALIDACIÓN ESTRICTA: El lente debe estar COMPLETAMENTE CUBIERTO por sangre capilar iluminada
-            // El canal rojo debe ser muy alto (> 95) y predominar fuertemente sobre verde y azul
+            // Validación capilar: rojo dominante uniforme
             const esRojoUniforme = avgR > 95 && (avgR > avgG * 1.5) && (avgR > avgB * 1.8);
 
             if (esRojoUniforme) {
-              // LENTE CUBIERTO AL 100%
               if (!lenteCompletamenteCubierto) {
                 lenteCompletamenteCubierto = true;
                 cameraBox.className = "relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-emerald-500 shadow-lg flex items-center justify-center bg-black transition-colors duration-300 ring-4 ring-emerald-200";
@@ -762,19 +757,16 @@
               bufferRojos.push({ val: avgR, t: ahora });
               if (bufferRojos.length > 25) bufferRojos.shift();
 
-              // PROCESAR PULSO SÓLO SI LA COBERTURA ESTÁ CONFIRMADA
               if (bufferRojos.length >= 8) {
                 const promedio = bufferRojos.reduce((a, b) => a + b.val, 0) / bufferRojos.length;
                 const ultimo = bufferRojos[bufferRojos.length - 1].val;
                 const anterior = bufferRojos[bufferRojos.length - 2].val;
                 const diff = (ultimo - promedio);
 
-                // Dibujar en osciloscopio
                 waveHistory.shift();
                 const yPlot = Math.max(5, Math.min(45, 25 - (diff * 5)));
                 waveHistory.push(yPlot);
 
-                // Detección de latido real
                 if (ultimo > promedio * 1.006 && ultimo < anterior && (ahora - ultimoPicoTiempo > 420)) {
                   ultimoPicoTiempo = ahora;
                   latidosContabilizados++;
@@ -810,7 +802,6 @@
                 }
               }
             } else {
-              // NO CUBRE BIEN O ESTÁ EN EL LENTE EQUIVOCADO
               lenteCompletamenteCubierto = false;
               cameraBox.className = "relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-amber-400 shadow-lg flex items-center justify-center bg-black transition-colors duration-300";
               lockBadge.innerText = "Cubre el lente";
@@ -823,7 +814,6 @@
               waveHistory.push(25);
             }
 
-            // DIBUJAR OSCILOSCOPIO
             chartCtx.fillStyle = "rgba(2, 6, 23, 0.4)";
             chartCtx.fillRect(0, 0, chartCanvas.width, chartCanvas.height);
             chartCtx.strokeStyle = lenteCompletamenteCubierto ? "#10b981" : "#f59e0b";
@@ -863,21 +853,21 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Pulso confirmado. Ahora toca el micrófono para hablar y cuéntame con calma tus molestias.");
+      hablarAsistente("Pulso confirmado. Presiona el micrófono una vez para empezar a hablar y vuelve a presionarlo cuando termines.");
     }
 
     // ==========================================
-    // RECONOCIMIENTO DE VOZ EN TIEMPO REAL (STREAMING SIN CORTES)
+    // RECONOCIMIENTO DE VOZ PROFESIONAL (ESTILO GBOARD - CERO REPETICIONES)
     // ==========================================
-    function toggleMicrofonoStreaming() {
-      if (grabandoVoz) {
-        detenerVozStreaming();
+    function toggleMicrofonoDictado() {
+      if (microfonoActivo) {
+        apagarMicrofono();
       } else {
-        iniciarVozStreaming();
+        encenderMicrofono();
       }
     }
 
-    function iniciarVozStreaming() {
+    function encenderMicrofono() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert("Tu navegador no soporta micrófono web. Por favor escribe tus síntomas.");
@@ -889,79 +879,73 @@
       const waves = document.getElementById("voice-waves");
       const label = document.getElementById("mic-status-label");
 
-      // Guardar lo que ya estaba escrito para no borrarlo
-      textoBaseAcumulado = txt.value.trim();
+      // Tomar lo que ya esté en el cuadro para no perderlo
+      textoConfirmado = txt.value.trim();
+      if (textoConfirmado.length > 0) textoConfirmado += " ";
 
       recognition = new SpeechRecognition();
       recognition.lang = "es-PE";
-      recognition.continuous = true;     // Escucha continua sin cortar
-      recognition.interimResults = true; // Transcripción en vivo palabra por palabra
+      recognition.continuous = true;
+      recognition.interimResults = true;
 
       recognition.onstart = () => {
-        grabandoVoz = true;
-        btn.className = "w-18 h-18 p-4 bg-rose-600 text-white rounded-full shadow-lg transition transform scale-105 flex items-center justify-center cursor-pointer ring-4 ring-rose-200 animate-pulse";
+        microfonoActivo = true;
+        btn.className = "w-16 h-16 bg-rose-600 text-white rounded-full shadow-lg transition transform scale-105 flex items-center justify-center cursor-pointer ring-4 ring-rose-200 animate-pulse";
         waves.classList.remove("hidden");
-        label.innerText = "🔴 Escuchando en tiempo real... Toca para pausar";
+        label.innerText = "🔴 Escuchando... Toca para pausar";
         label.className = "text-[11px] font-bold text-rose-600";
       };
 
       recognition.onresult = (e) => {
-        let finalTrans = "";
-        let interimTrans = "";
-
+        let interimText = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
+          const trans = e.results[i][0].transcript;
           if (e.results[i].isFinal) {
-            finalTrans += e.results[i][0].transcript;
+            textoConfirmado += trans + " ";
           } else {
-            interimTrans += e.results[i][0].transcript;
+            interimText += trans;
           }
         }
-
-        // Actualización en vivo en la pantalla palabra por palabra
-        const textoActual = (textoBaseAcumulado ? textoBaseAcumulado + " " : "") + finalTrans + interimTrans;
-        txt.value = textoActual;
-
-        // Si se consolidó una frase final, se suma a la base acumulada
-        if (finalTrans) {
-          textoBaseAcumulado = (textoBaseAcumulado ? textoBaseAcumulado + " " : "") + finalTrans.trim();
-        }
+        // Mostrar en tiempo real: lo confirmado + lo que se está pronunciando en este segundo
+        txt.value = (textoConfirmado + interimText).trim();
       };
 
       recognition.onerror = (e) => {
         if (e.error !== 'no-speech') {
-          detenerVozStreaming();
+          apagarMicrofono();
         }
       };
 
       recognition.onend = () => {
-        // Si el usuario no apagó el micrófono explícitamente, reconectar automáticamente (anti-corte de Android)
-        if (grabandoVoz) {
+        if (microfonoActivo) {
           try { recognition.start(); } catch(err){}
         } else {
-          detenerVozStreaming();
+          apagarMicrofono();
         }
       };
 
       try {
         recognition.start();
       } catch(err) {
-        detenerVozStreaming();
+        apagarMicrofono();
       }
     }
 
-    function detenerVozStreaming() {
-      grabandoVoz = false;
+    function apagarMicrofono() {
+      microfonoActivo = false;
       if (recognition) {
         try { recognition.stop(); } catch(e){}
         recognition = null;
       }
 
+      const txt = document.getElementById("txt-sintomas");
       const btn = document.getElementById("btn-toggle-mic");
       const waves = document.getElementById("voice-waves");
       const label = document.getElementById("mic-status-label");
 
+      if (txt) txt.value = txt.value.trim();
       if (btn) {
-        btn.className = "w-18 h-18 p-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer";
+        btn.className = "w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer";
       }
       if (waves) waves.classList.add("hidden");
       if (label) {
@@ -980,7 +964,7 @@
         return;
       }
 
-      detenerVozStreaming();
+      apagarMicrofono();
       const btn = document.getElementById("btn-iniciar-preguntas");
       btn.disabled = true;
       btn.innerText = "Generando preguntas clínicas a tu medida...";
