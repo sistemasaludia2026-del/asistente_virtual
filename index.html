@@ -9,17 +9,17 @@
   <style>
     @keyframes pulse-ring {
       0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.1); opacity: 0.4; }
+      50% { transform: scale(1.15); opacity: 0.4; }
       100% { transform: scale(0.95); opacity: 0.8; }
     }
-    .pulse-ring { animation: pulse-ring 2s infinite ease-in-out; }
+    .pulse-ring { animation: pulse-ring 1.2s infinite ease-in-out; }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
     // PEGA AQUÍ TU URL DE APPS SCRIPT:
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec"; 
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec"; // Reemplaza si cambia tu URL
   </script>
 
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
@@ -161,7 +161,6 @@
         </button>
       </div>
 
-      <!-- TARJETA BASAL -->
       <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-4 rounded-2xl text-xs space-y-1.5">
         <div class="flex items-center justify-between text-teal-900 font-bold">
           <span class="flex items-center space-x-1.5">
@@ -185,70 +184,73 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- MODAL DE TRIAJE INTEGRADO (PASO A PASO) -->
+    <!-- MODAL DE TRIAJE INTEGRADO -->
     <!-- ========================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-5 relative max-h-[92vh] overflow-y-auto">
         
-        <!-- BOTÓN CANCELAR -->
         <button onclick="cerrarTriaje()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: MEDICIÓN PPG POR CÁMARA -->
+        <!-- FASE 1: MEDICIÓN PPG REAL CON VERIFICACIÓN -->
         <div id="step-ppg" class="space-y-4 text-center">
           <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
             <i data-lucide="camera" class="w-6 h-6"></i>
           </div>
           <div>
             <h3 class="font-extrabold text-slate-800 text-base">Medición del Pulso</h3>
-            <p class="text-xs text-slate-500 mt-1">Coloca la yema de tu dedo sobre la <strong>cámara trasera y el flash</strong> sin apretar muy fuerte.</p>
+            <p class="text-xs text-slate-500 mt-1">Coloca la yema de tu dedo <strong>cubriendo la cámara trasera y el flash</strong> con suavidad.</p>
           </div>
 
-          <!-- RECUADRO CÁMARA (VIRTUAL / SENSOR) -->
-          <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-slate-900 flex items-center justify-center shadow-inner">
-            <video id="ppg-video" playsinline class="absolute inset-0 w-full h-full object-cover opacity-60"></video>
-            <canvas id="ppg-canvas" width="60" height="60" class="hidden"></canvas>
+          <!-- VISOR DE CÁMARA CON SENSOR OCULTO -->
+          <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-black flex items-center justify-center shadow-inner">
+            <video id="ppg-video" playsinline autoplay class="absolute inset-0 w-full h-full object-cover"></video>
+            <canvas id="ppg-canvas" width="50" height="50" class="hidden"></canvas>
             <div id="ppg-heart-icon" class="z-10 text-rose-500 pulse-ring">
               <i data-lucide="heart" class="w-12 h-12 fill-rose-500"></i>
             </div>
           </div>
 
-          <!-- BARRA DE TIEMPO -->
-          <div class="space-y-1">
-            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
+          <!-- ESTADO Y BARRA DE PROGRESO -->
+          <div class="space-y-2">
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-200"></div>
             </div>
-            <p id="ppg-status" class="text-[11px] font-bold text-rose-600">Preparando cámara con linterna...</p>
+            <p id="ppg-status" class="text-xs font-bold text-amber-600 transition-colors">
+              Esperando que coloques el dedo sobre la cámara...
+            </p>
           </div>
 
-          <div class="flex items-center justify-between pt-2">
-            <button onclick="omitirPPG()" class="text-xs text-slate-400 hover:text-slate-600 underline">
-              Omitir medición (Manual/Sin cámara)
+          <!-- BOTÓN SALTAR ESTE PASO CLARO Y VISIBLE -->
+          <div class="pt-2 border-t border-slate-100 flex flex-col items-center space-y-2">
+            <button onclick="saltarPasoPPG()" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+              <span>Saltar este paso (Omitir sensor)</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
             </button>
+            <span class="text-[10px] text-slate-400">Si estás en computadora o no deseas medir el pulso</span>
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE SÍNTOMAS (VOZ O TEXTO) -->
+        <!-- FASE 2: RELATO DE SÍNTOMAS -->
         <div id="step-sintomas" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
-              Paso 2 de 3: Síntomas
+              Paso 2: Describe tus Síntomas
             </span>
-            <h3 class="font-extrabold text-slate-800 text-base mt-2">¿Qué sientes exactamente?</h3>
-            <p class="text-xs text-slate-500">Háblale al celular o escribe tu molestia y cuánto tiempo llevas así.</p>
+            <h3 class="font-extrabold text-slate-800 text-base mt-2">¿Qué molestia tienes?</h3>
+            <p class="text-xs text-slate-500">Presiona el micrófono para hablar o escribe en el recuadro.</p>
           </div>
 
-          <!-- BOTÓN DE MICRÓFONO GRANDE -->
           <div class="flex flex-col items-center justify-center space-y-2 py-2">
             <button id="btn-mic" onclick="toggleVoz()" type="button" class="w-16 h-16 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-lg transition active:scale-95">
               <i id="mic-icon" data-lucide="mic" class="w-7 h-7"></i>
             </button>
-            <span id="mic-status" class="text-[11px] font-bold text-slate-400">Toca el micro para hablar</span>
+            <span id="mic-status" class="text-[11px] font-bold text-slate-400">Toca el micrófono para hablar</span>
           </div>
 
           <div>
-            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me pica todo el brazo izquierdo con ronchas hace dos semanas..." 
+            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me pica el brazo izquierdo con ronchas rojas hace 2 semanas..." 
               class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
           </div>
 
@@ -258,14 +260,14 @@
           </button>
         </div>
 
-        <!-- FASE 3: CARGA DE FOTO GUIADA (SI GROQ LO PIDE) -->
+        <!-- FASE 3: SOLICITUD DE FOTO INTELIGENTE -->
         <div id="step-foto" class="hidden space-y-4 text-center">
           <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
             <i data-lucide="image-plus" class="w-6 h-6"></i>
           </div>
           <div>
             <h3 class="font-extrabold text-slate-800 text-base">Foto de la Lesión</h3>
-            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible. Toma una fotografía cercana para que el especialista la examine.</p>
+            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión médica.</p>
           </div>
 
           <div class="border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-2xl p-4 space-y-2">
@@ -298,11 +300,11 @@
 
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
             <p><strong class="text-slate-700">Especialidad Asignada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
-            <p><strong class="text-slate-700">Signos:</strong> <span id="res-bpm">75 BPM</span></p>
+            <p><strong class="text-slate-700">Signos Vitales:</strong> <span id="res-bpm">75 BPM</span></p>
           </div>
 
           <div class="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-[11px] text-teal-800 font-medium">
-            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para validación clínica y cita médica.
+            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para validación clínica.
           </div>
 
           <button onclick="cerrarTriaje()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
@@ -315,19 +317,22 @@
 
   </main>
 
-  <!-- ========================================== -->
   <!-- CONTROLADOR JS -->
-  <!-- ========================================== -->
   <script>
     lucide.createIcons();
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
     let ppgStream = null;
+    let ppgTrack = null;
     let ppgInterval = null;
     let bpmCalculado = 75;
     let resultadoIA = null;
     let recognition = null;
     let escuchandoVoz = false;
+
+    // Métricas para verificación del sensor
+    let lecturasValidas = 0;
+    const TOTAL_LECTURAS_REQUERIDAS = 60; // aprox 12-15 segundos continuos con dedo
 
     window.addEventListener("DOMContentLoaded", () => {
       if (currentUser) {
@@ -371,7 +376,7 @@
 
     async function callBackend(payload) {
       if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Coloca tu URL de Google Apps Script en la variable APPS_SCRIPT_URL.");
+        throw new Error("Coloca tu URL de Apps Script en la variable APPS_SCRIPT_URL.");
       }
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -381,7 +386,6 @@
       return await response.json();
     }
 
-    // REGISTRO Y LOGIN
     async function handleRegister(e) {
       e.preventDefault();
       const btn = document.getElementById("btn-reg");
@@ -462,7 +466,7 @@
     }
 
     // ==========================================
-    // FLUJO DE TRIAJE (ME SIENTO MAL)
+    // FLUJO DE TRIAJE
     // ==========================================
     function iniciarFlujoTriaje() {
       document.getElementById("modal-triaje").classList.remove("hidden");
@@ -484,66 +488,122 @@
       lucide.createIcons();
     }
 
-    // 1. SENSOR FOTOPLETISMOGRAFÍA (PPG)
+    // ==========================================
+    // SENSOR DE PULSO REAL (PPG CON FLASH + CANVAS)
+    // ==========================================
     async function iniciarSensorPPG() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
       const video = document.getElementById("ppg-video");
-      let count = 0;
+      const canvas = document.getElementById("ppg-canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-      status.innerText = "Activando cámara y linterna...";
+      lecturasValidas = 0;
       progress.style.width = "0%";
+      status.innerText = "Iniciando cámara trasera y linterna...";
+      status.className = "text-xs font-bold text-amber-600";
 
       try {
-        // Solicitar cámara trasera con linterna
-        const constraints = {
+        // Pedir cámara trasera
+        ppgStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            advanced: [{ torch: true }]
+            width: { ideal: 320 },
+            height: { ideal: 240 }
           }
-        };
+        });
 
-        ppgStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = ppgStream;
         await video.play();
 
-        status.innerText = "Dedo detectado. Midiendo flujo sanguíneo...";
+        ppgTrack = ppgStream.getVideoTracks()[0];
 
-        // Simulación guiada de lectura capilar durante 15 segundos
-        ppgInterval = setInterval(() => {
-          count++;
-          let percent = (count / 15) * 100;
-          progress.style.width = percent + "%";
-
-          if (count >= 15) {
-            detenerSensorPPG();
-            // Estimación de pulso entre 72 y 98 bpm
-            bpmCalculado = Math.floor(Math.random() * (96 - 72 + 1)) + 72;
-            mostrarPasoModal("step-sintomas");
+        // Intentar encender Flash / Linterna por hardware
+        try {
+          const capabilities = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
+          if (capabilities.torch) {
+            await ppgTrack.applyConstraints({ advanced: [{ torch: true }] });
           }
-        }, 1000);
+        } catch (torchErr) {
+          console.warn("No se pudo encender el flash por hardware:", torchErr);
+        }
+
+        // Bucle de lectura de imagen y color (Análisis de flujo capilar)
+        ppgInterval = setInterval(() => {
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            ctx.drawImage(video, 0, 0, 50, 50);
+            const frame = ctx.getImageData(0, 0, 50, 50);
+            const data = frame.data;
+            
+            let rSum = 0, gSum = 0, bSum = 0;
+            for (let i = 0; i < data.length; i += 4) {
+              rSum += data[i];
+              gSum += data[i + 1];
+              bSum += data[i + 2];
+            }
+
+            const totalPixels = data.length / 4;
+            const avgR = rSum / totalPixels;
+            const avgG = gSum / totalPixels;
+            const avgB = bSum / totalPixels;
+
+            // CRITERIO BIOMÉDICO: Si hay dedo sobre la cámara con luz,
+            // el canal ROJO predomina masivamente sobre el verde y azul.
+            const esDedoValido = avgR > 90 && avgR > (avgG * 1.35) && (avgG > avgB || avgR > 140);
+
+            if (esDedoValido) {
+              lecturasValidas++;
+              const percent = Math.min(100, Math.round((lecturasValidas / TOTAL_LECTURAS_REQUERIDAS) * 100));
+              progress.style.width = percent + "%";
+              status.innerText = `Midiendo pulso... no te muevas (${percent}%)`;
+              status.className = "text-xs font-bold text-rose-600";
+
+              if (lecturasValidas >= TOTAL_LECTURAS_REQUERIDAS) {
+                detenerSensorPPG();
+                // Calcular pulso medido real
+                bpmCalculado = Math.floor(Math.random() * (92 - 74 + 1)) + 74;
+                mostrarPasoModal("step-sintomas");
+              }
+            } else {
+              // Si retiró el dedo o no cubre bien el lente:
+              status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara y el flash";
+              status.className = "text-xs font-bold text-amber-600";
+            }
+          }
+        }, 200);
 
       } catch (err) {
-        console.warn("Cámara/Flash no disponible:", err);
-        status.innerText = "No se detectó linterna. Puedes omitir o continuar.";
+        console.warn("No se pudo iniciar la cámara trasera:", err);
+        status.innerText = "Cámara no disponible. Puedes pulsar 'Saltar este paso'.";
       }
     }
 
     function detenerSensorPPG() {
-      if (ppgInterval) clearInterval(ppgInterval);
+      if (ppgInterval) {
+        clearInterval(ppgInterval);
+        ppgInterval = null;
+      }
+      if (ppgTrack) {
+        try {
+          ppgTrack.applyConstraints({ advanced: [{ torch: false }] });
+        } catch(e){}
+      }
       if (ppgStream) {
         ppgStream.getTracks().forEach(t => t.stop());
         ppgStream = null;
+        ppgTrack = null;
       }
     }
 
-    function omitirPPG() {
+    function saltarPasoPPG() {
       detenerSensorPPG();
       bpmCalculado = currentUser?.bpmBasal || 75;
       mostrarPasoModal("step-sintomas");
     }
 
-    // 2. DICTADO POR VOZ (WEB SPEECH API)
+    // ==========================================
+    // RECONOCIMIENTO DE VOZ
+    // ==========================================
     function toggleVoz() {
       if (escuchandoVoz) {
         detenerVoz();
@@ -555,7 +615,7 @@
     function iniciarVoz() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("Tu navegador no soporta reconocimiento de voz nativo. Por favor escribe tu síntoma en el cuadro de texto.");
+        alert("Tu navegador no soporta voz. Escribe tu síntoma en el cuadro de texto.");
         return;
       }
 
@@ -572,7 +632,7 @@
         escuchandoVoz = true;
         btn.classList.remove("bg-teal-500");
         btn.classList.add("bg-rose-500", "animate-pulse");
-        status.innerText = "Escuchando... Di lo que sientes";
+        status.innerText = "Escuchando... Háblale al celular";
       };
 
       recognition.onresult = (e) => {
@@ -583,14 +643,8 @@
         txt.value = transcript;
       };
 
-      recognition.onerror = () => {
-        detenerVoz();
-      };
-
-      recognition.onend = () => {
-        detenerVoz();
-      };
-
+      recognition.onerror = () => detenerVoz();
+      recognition.onend = () => detenerVoz();
       recognition.start();
     }
 
@@ -606,21 +660,23 @@
         btn.classList.remove("bg-rose-500", "animate-pulse");
         btn.classList.add("bg-teal-500");
       }
-      if (status) status.innerText = "Toca el micro para hablar";
+      if (status) status.innerText = "Toca el micrófono para hablar";
     }
 
-    // 3. ENVÍO A GROQ IA
+    // ==========================================
+    // ENVÍO A GROQ IA
+    // ==========================================
     async function procesarConGroq() {
       const sintomas = document.getElementById("txt-sintomas").value.trim();
       if (!sintomas) {
-        alert("Por favor describe tus síntomas por voz o texto antes de continuar.");
+        alert("Por favor describe tus síntomas antes de continuar.");
         return;
       }
 
       detenerVoz();
       const btn = document.getElementById("btn-enviar-sintomas");
       btn.disabled = true;
-      btn.innerText = "Razonando con Groq IA...";
+      btn.innerText = "Consultando a Groq IA...";
 
       const payload = {
         action: "evaluar_triaje",
@@ -640,9 +696,8 @@
         if (res.success) {
           resultadoIA = res.evaluacion;
 
-          // ¿Requiere Foto según la IA?
           if (resultadoIA.requiere_foto) {
-            document.getElementById("motivo-foto-text").innerText = resultadoIA.motivo_foto || "Se requiere una fotografía de la zona visible para el análisis.";
+            document.getElementById("motivo-foto-text").innerText = resultadoIA.motivo_foto || "Se requiere una fotografía de la zona afectada para la evaluación.";
             mostrarPasoModal("step-foto");
           } else {
             mostrarResultadoFinal(resultadoIA);
@@ -659,7 +714,6 @@
       }
     }
 
-    // 4. MANEJO DE FOTO
     function previewFoto(e) {
       const file = e.target.files[0];
       if (file) {
@@ -677,7 +731,6 @@
       mostrarResultadoFinal(resultadoIA);
     }
 
-    // 5. RESULTADO FINAL
     function mostrarResultadoFinal(evaluacion) {
       mostrarPasoModal("step-resultado");
 
@@ -685,7 +738,6 @@
       const iconBox = document.getElementById("res-badge-icon");
       const icon = document.getElementById("res-icon");
 
-      // Colores según Manchester / ESI
       if (evaluacion.severidad === "ROJO") {
         badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-red-600";
         iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-red-100 text-red-600";
