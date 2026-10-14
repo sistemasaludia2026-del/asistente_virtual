@@ -11,18 +11,13 @@
       transform: scale(1.35) !important;
       transition: transform 0.08s ease-out;
     }
-    @keyframes flash-glow {
-      0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.6); }
-      50% { box-shadow: 0 0 25px rgba(250, 204, 21, 1); }
-    }
-    .flash-btn-pulse { animation: flash-glow 1.5s infinite; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
-    // PEGA AQUÍ TU URL DE APPS SCRIPT
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec"; // Reemplaza por tu URL completa
+    // PEGA AQUÍ TU URL DE APPS SCRIPT (Verifica que termine en /exec):
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec";
   </script>
 
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
@@ -176,18 +171,18 @@
         <p><strong class="text-slate-600">Alergias:</strong> <span id="user-display-alergias" class="text-slate-800">Ninguna</span></p>
       </div>
 
-      <!-- BOTÓN GIGANTE: ME SIENTO MAL -->
+      <!-- BOTÓN ME SIENTO MAL -->
       <div class="flex-1 flex flex-col items-center justify-center text-center space-y-4">
         <button onclick="iniciarFlujoTriaje()" id="btn-trigger-mal" class="w-44 h-44 bg-gradient-to-tr from-rose-500 to-red-600 hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl flex flex-col items-center justify-center space-y-2 transition duration-200 ring-8 ring-rose-100 cursor-pointer">
           <i data-lucide="heart-pulse" class="w-14 h-14 animate-pulse"></i>
           <span class="text-base font-extrabold uppercase tracking-wider leading-tight">Me Siento<br>Mal</span>
         </button>
-        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen biomédico por cámara, anamnesis con IA y triaje asistido.</p>
+        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen por cámara, anamnesis con IA y triaje asistido.</p>
       </div>
     </section>
 
     <!-- ========================================== -->
-    <!-- MODAL DE TRIAJE DINÁMICO E INTERACTIVO -->
+    <!-- MODAL DE TRIAJE DINÁMICO -->
     <!-- ========================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
@@ -196,14 +191,14 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: SENSOR PPG REAL POR ONDA PULSÁTIL -->
+        <!-- FASE 1: SENSOR PPG AMBIENTAL (SIN BOTÓN DE FLASH) -->
         <div id="step-ppg" class="space-y-3.5 text-center">
           <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
             <i data-lucide="heart-pulse" class="w-6 h-6"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-800 text-base">Detector de Pulso Óptico</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Apoya suavemente tu yema cubriendo la <strong>cámara trasera</strong>.</p>
+            <h3 class="font-extrabold text-slate-800 text-base">Medición de Pulso</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Cubre suavemente la <strong>cámara trasera</strong> apuntando hacia una luz, foco o ventana.</p>
           </div>
 
           <!-- VISOR DE ONDA PULSÁTIL -->
@@ -211,25 +206,16 @@
             <video id="ppg-video" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
             <canvas id="ppg-canvas" width="40" height="40" class="hidden"></canvas>
             
-            <!-- CORAZÓN QUE LATE CON CADA PULSO REAL -->
             <div id="ppg-heart-icon" class="z-10 text-rose-500 transition-transform duration-75">
               <i data-lucide="heart" class="w-14 h-14 fill-rose-500"></i>
             </div>
           </div>
 
-          <!-- BOTÓN FLASH -->
-          <div>
-            <button id="btn-toggle-flash" onclick="toggleFlashManual()" type="button" 
-              class="flash-btn-pulse inline-flex items-center space-x-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black rounded-full shadow-lg text-xs transition active:scale-95">
-              <i data-lucide="zap" class="w-4 h-4 fill-amber-950"></i>
-              <span id="flash-status-text">Activar Linterna ⚡</span>
-            </button>
-            <p id="flash-hint" class="hidden text-[10px] text-amber-700 mt-1.5 font-medium">
-              💡 Si tu celular bloquea el flash, colócate bajo una lámpara o pulsa saltar paso.
-            </p>
+          <div class="p-2.5 bg-amber-50 border border-amber-200/60 rounded-xl text-[11px] text-amber-800 font-medium">
+            💡 <strong>Consejo:</strong> Si estás en un lugar oscuro, acércate a una fuente de luz para que la cámara detecte el pulso capilar.
           </div>
 
-          <!-- ESTADO Y CONTADOR DE LATIDOS REALES -->
+          <!-- ESTADO Y CONTADOR -->
           <div class="space-y-1.5">
             <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-150"></div>
@@ -266,7 +252,7 @@
           </div>
 
           <div>
-            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me duele mucho el estómago y tengo ganas de vomitar..." 
+            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me duele mucho el estómago, tengo náuseas y ardor..." 
               class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
           </div>
 
@@ -276,18 +262,17 @@
           </button>
         </div>
 
-        <!-- FASE 3: CUESTIONARIO ADAPTATIVO GENERADO POR GROQ -->
+        <!-- FASE 3: CUESTIONARIO ADAPTATIVO GENERADO POR GROQ (HASTA 10 PREGUNTAS) -->
         <div id="step-cuestionario" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">
               Paso 3: Preguntas de Precisión
             </span>
-            <h3 class="font-extrabold text-slate-800 text-base mt-2">La IA necesita precisar esto:</h3>
-            <p class="text-xs text-slate-500">Toca la opción que mejor describa tu estado.</p>
+            <h3 class="font-extrabold text-slate-800 text-base mt-2">Preguntas Clínicas</h3>
+            <p id="cuestionario-subtitle" class="text-xs text-slate-500">Responde estas preguntas puntuales para orientar el caso.</p>
           </div>
 
-          <!-- CONTENEDOR DE PREGUNTAS DINÁMICAS -->
-          <div id="cuestionario-container" class="space-y-4 text-left"></div>
+          <div id="cuestionario-container" class="space-y-3.5 text-left max-h-[55vh] overflow-y-auto pr-1"></div>
 
           <button onclick="enviarRespuestasFinales()" id="btn-evaluar-final" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
             <span>Obtener Diagnóstico y Derivación</span>
@@ -302,7 +287,7 @@
           </div>
           <div>
             <h3 class="font-extrabold text-slate-800 text-base">Foto de la Lesión</h3>
-            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión médica.</p>
+            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión.</p>
           </div>
 
           <div class="border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-2xl p-4 space-y-2">
@@ -321,7 +306,7 @@
           </button>
         </div>
 
-        <!-- FASE 5: RESULTADO FINAL Y DERIVACIÓN -->
+        <!-- FASE 5: RESULTADO FINAL -->
         <div id="step-resultado" class="hidden space-y-4 text-center">
           <div id="res-badge-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto">
             <i id="res-icon" data-lucide="check-circle" class="w-8 h-8"></i>
@@ -353,7 +338,7 @@
   </main>
 
   <!-- ========================================== -->
-  <!-- CONTROLADOR JAVASCRIPT CON PPG REAL Y ANAMNESIS -->
+  <!-- CONTROLADOR JS -->
   <!-- ========================================== -->
   <script>
     lucide.createIcons();
@@ -362,20 +347,19 @@
     let ppgStream = null;
     let ppgTrack = null;
     let ppgAnimId = null;
-    let flashEncendido = false;
     let bpmCalculado = 75;
     let resultadoIA = null;
     let recognition = null;
     let escuchandoVoz = false;
 
-    // ALGORITMO DE ONDA PULSÁTIL
+    // PPG
     let bufferRojos = [];
     let picosDetectados = [];
     let latidosContabilizados = 0;
-    const LATIDOS_OBJETIVO = 8; // Necesitamos 8 latidos reales para un cálculo certero
+    const LATIDOS_OBJETIVO = 8;
     let ultimoPicoTiempo = 0;
 
-    // ESTADO DEL CUESTIONARIO
+    // CUESTIONARIO
     let preguntasActuales = [];
     let respuestasSeleccionadas = {};
 
@@ -446,16 +430,26 @@
       document.getElementById("alert-box").classList.add("hidden");
     }
 
+    // CALL BACKEND BLINDADO CONTRA ERRORES HTML DE GOOGLE
     async function callBackend(payload) {
       if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Coloca tu URL de Apps Script en APPS_SCRIPT_URL.");
+        throw new Error("Coloca tu URL de Apps Script en la variable APPS_SCRIPT_URL.");
       }
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      return await response.json();
+      
+      const rawText = await response.text();
+      try {
+        return JSON.parse(rawText);
+      } catch (err) {
+        if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
+          throw new Error("Google Apps Script devolvió una página de login. Asegúrate de implementar con acceso 'Cualquier usuario' y usar la URL /exec.");
+        }
+        throw new Error("Respuesta inválida: " + rawText.substring(0, 100));
+      }
     }
 
     async function handleRegister(e) {
@@ -537,13 +531,13 @@
       switchView("view-login");
     }
 
-    // MODAL
+    // MODAL TRIAJE
     function iniciarFlujoTriaje() {
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
-      iniciarSensorPPGReal();
+      iniciarSensorPPGAmbiental();
 
-      hablarAsistente("Hola, respira hondo. Apoya suavemente tu dedo cubriendo la cámara trasera. Contaremos tus latidos reales.");
+      hablarAsistente("Hola, mantén la calma. Por favor, apoya suavemente tu dedo cubriendo la cámara trasera apuntando hacia una luz, foco o ventana.");
     }
 
     function cerrarTriaje() {
@@ -561,10 +555,8 @@
       lucide.createIcons();
     }
 
-    // ==========================================
-    // SENSOR PPG REAL: PROCESAMIENTO DE SEÑAL POR PICOS
-    // ==========================================
-    async function iniciarSensorPPGReal() {
+    // SENSOR AMBIENTAL (SIN FLASH)
+    async function iniciarSensorPPGAmbiental() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
       const liveBpm = document.getElementById("ppg-live-bpm");
@@ -594,16 +586,6 @@
         await video.play();
         ppgTrack = ppgStream.getVideoTracks()[0];
 
-        // Intento de flash automático
-        try {
-          const cap = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
-          if (cap.torch) {
-            await ppgTrack.applyConstraints({ advanced: [{ torch: true }] });
-            flashEncendido = true;
-            document.getElementById("flash-status-text").innerText = "Linterna Activa ⚡";
-          }
-        } catch(e){}
-
         function procesarFotograma() {
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
             ctx.drawImage(video, 0, 0, 40, 40);
@@ -619,31 +601,27 @@
             const avgR = rSum / px;
             const avgG = gSum / px;
 
-            // Validación: ¿Hay tejido vivo sobre el sensor?
-            const dedoPresente = avgR > 80 && avgR > (avgG * 1.25);
+            // Dedo sobre la cámara con luz ambiental
+            const dedoPresente = avgR > 65 && avgR > (avgG * 1.2);
 
             if (dedoPresente) {
               const ahora = performance.now();
               bufferRojos.push({ valor: avgR, tiempo: ahora });
               if (bufferRojos.length > 30) bufferRojos.shift();
 
-              // DETECTOR DE PICOS (SÍSTOLE REAL)
               if (bufferRojos.length >= 10) {
                 const promedioMovil = bufferRojos.reduce((acc, curr) => acc + curr.valor, 0) / bufferRojos.length;
                 const ultimo = bufferRojos[bufferRojos.length - 1].valor;
                 const anterior = bufferRojos[bufferRojos.length - 2].valor;
 
-                // Pico: cambio brusco sobre el umbral y al menos 400ms después del último latido (máx 150 BPM)
-                if (ultimo > promedioMovil * 1.008 && ultimo < anterior && (ahora - ultimoPicoTiempo > 450)) {
+                if (ultimo > promedioMovil * 1.006 && ultimo < anterior && (ahora - ultimoPicoTiempo > 450)) {
                   ultimoPicoTiempo = ahora;
                   latidosContabilizados++;
                   picosDetectados.push(ahora);
 
-                  // EFECTO VISUAL DE LATIDO REAL
                   heartIcon.classList.add("beat-scale");
                   setTimeout(() => heartIcon.classList.remove("beat-scale"), 100);
 
-                  // Calcular BPM instantáneo si tenemos al menos 2 latidos
                   if (picosDetectados.length >= 2) {
                     const ultimosDos = picosDetectados.slice(-2);
                     const deltaMs = ultimosDos[1] - ultimosDos[0];
@@ -659,14 +637,13 @@
                   status.className = "text-xs font-bold text-rose-600";
 
                   if (latidosContabilizados >= LATIDOS_OBJETIVO) {
-                    // Fin: cálculo promedio real
                     const deltas = [];
                     for (let k = 1; k < picosDetectados.length; k++) {
                       deltas.push(picosDetectados[k] - picosDetectados[k - 1]);
                     }
                     const promedioDelta = deltas.reduce((a, b) => a + b, 0) / deltas.length;
                     bpmCalculado = Math.round(60000 / promedioDelta);
-                    if (bpmCalculado < 50 || bpmCalculado > 140) bpmCalculado = 76; // filtro de ruido
+                    if (bpmCalculado < 50 || bpmCalculado > 140) bpmCalculado = 76;
 
                     detenerSensorPPG();
                     pasarASintomas();
@@ -675,7 +652,7 @@
                 }
               }
             } else {
-              status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara trasera";
+              status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara hacia la luz";
               status.className = "text-xs font-bold text-amber-600";
             }
           }
@@ -690,30 +667,8 @@
       }
     }
 
-    async function toggleFlashManual() {
-      if (!ppgTrack) return;
-      try {
-        const cap = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
-        if (cap.torch) {
-          flashEncendido = !flashEncendido;
-          await ppgTrack.applyConstraints({ advanced: [{ torch: flashEncendido }] });
-          document.getElementById("flash-status-text").innerText = flashEncendido ? "Linterna Activa ⚡" : "Activar Linterna ⚡";
-        } else {
-          document.getElementById("flash-hint").classList.remove("hidden");
-        }
-      } catch (err) {
-        document.getElementById("flash-hint").classList.remove("hidden");
-      }
-    }
-
     function detenerSensorPPG() {
-      if (ppgAnimId) {
-        cancelAnimationFrame(ppgAnimId);
-        ppgAnimId = null;
-      }
-      if (ppgTrack) {
-        try { ppgTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){}
-      }
+      if (ppgAnimId) { cancelAnimationFrame(ppgAnimId); ppgAnimId = null; }
       if (ppgStream) {
         ppgStream.getTracks().forEach(t => t.stop());
         ppgStream = null;
@@ -729,7 +684,7 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Pulso registrado con éxito. Ahora dime qué molestias tienes. Te escucharé atentamente.");
+      hablarAsistente("Pulso capturado con éxito. Ahora describe con tranquilidad qué molestias sientes.");
     }
 
     // VOZ
@@ -758,7 +713,7 @@
         escuchandoVoz = true;
         btn.classList.remove("bg-teal-500");
         btn.classList.add("bg-rose-500", "animate-pulse");
-        status.innerText = "Te escucho... Habla tranquila(o)";
+        status.innerText = "Te escucho... Habla con calma";
       };
 
       recognition.onresult = (e) => {
@@ -789,9 +744,7 @@
       if (status) status.innerText = "Toca el micrófono para hablar";
     }
 
-    // ==========================================
-    // CUESTIONARIO ADAPTATIVO CON GROQ IA
-    // ==========================================
+    // CUESTIONARIO ADAPTATIVO (HASTA 10 PREGUNTAS)
     async function solicitarCuestionarioIA() {
       const sintomas = document.getElementById("txt-sintomas").value.trim();
       if (!sintomas) {
@@ -802,7 +755,7 @@
       detenerVoz();
       const btn = document.getElementById("btn-iniciar-preguntas");
       btn.disabled = true;
-      btn.innerText = "La IA está formulando preguntas clínicas...";
+      btn.innerText = "Formulando cuestionario médico...";
 
       const payload = {
         action: "generar_preguntas",
@@ -818,11 +771,9 @@
           preguntasActuales = res.preguntas;
           renderCuestionario(res.preguntas);
           mostrarPasoModal("step-cuestionario");
-
-          // Leer la primera pregunta con la voz asistente
-          hablarAsistente("Para mayor precisión médica, por favor responde este breve cuestionario.");
+          hablarAsistente(`Para mayor precisión médica, por favor responde estas ${res.preguntas.length} preguntas breves.`);
         } else {
-          alert("Error: " + res.message);
+          alert("Aviso: " + res.message);
         }
       } catch (err) {
         alert("Error de conexión: " + err.message);
@@ -835,6 +786,8 @@
 
     function renderCuestionario(preguntas) {
       const container = document.getElementById("cuestionario-container");
+      const subtitle = document.getElementById("cuestionario-subtitle");
+      subtitle.innerText = `Responde las siguientes ${preguntas.length} preguntas generadas para tu caso:`;
       container.innerHTML = "";
       respuestasSeleccionadas = {};
 
@@ -856,11 +809,9 @@
           btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
           btnOp.innerText = op;
           btnOp.onclick = () => {
-            // Desmarcar hermanos
             optionsBox.querySelectorAll(".opcion-btn").forEach(b => {
               b.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
             });
-            // Marcar actual
             btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50 font-bold transition text-indigo-900";
             respuestasSeleccionadas[p.id] = { pregunta: p.pregunta, respuesta: op };
           };
@@ -873,15 +824,14 @@
     }
 
     async function enviarRespuestasFinales() {
-      // Verificar que se hayan respondido
       if (Object.keys(respuestasSeleccionadas).length < preguntasActuales.length) {
-        alert("Por favor selecciona una opción en cada una de las preguntas antes de continuar.");
+        alert("Por favor selecciona una opción en cada pregunta antes de continuar.");
         return;
       }
 
       const btn = document.getElementById("btn-evaluar-final");
       btn.disabled = true;
-      btn.innerText = "Generando diagnóstico clínico...";
+      btn.innerText = "Analizando diagnóstico con Groq...";
 
       let textoRespuestas = "";
       for (const id in respuestasSeleccionadas) {
