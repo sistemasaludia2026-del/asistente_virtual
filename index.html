@@ -8,21 +8,28 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     .beat-scale {
-      transform: scale(1.35) !important;
+      transform: scale(1.3) !important;
       transition: transform 0.08s ease-out;
+    }
+    @keyframes soundwave {
+      0%, 100% { height: 6px; }
+      50% { height: 26px; }
+    }
+    .wave-bar {
+      animation: soundwave 1s infinite ease-in-out;
     }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
-    // PEGA AQUÍ TU URL DE APPS SCRIPT (Verifica que termine en /exec):
+    // PEGA AQUÍ TU URL DE APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec";
   </script>
 
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
 
-    <!-- HEADER -->
+    <!-- CABECERA -->
     <header class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-5 rounded-b-3xl shadow-md">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
@@ -147,86 +154,126 @@
       </form>
     </section>
 
-    <!-- VISTA PRINCIPAL PACIENTE -->
-    <section id="view-home" class="hidden p-6 flex-1 flex flex-col space-y-6">
+    <!-- VISTA PRINCIPAL PACIENTE CON PESTAÑAS -->
+    <section id="view-home" class="hidden p-5 flex-1 flex flex-col space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
-          <p class="text-[11px] text-slate-400 font-bold uppercase">Expediente Clínico Activo</p>
-          <h2 id="user-display-name" class="text-lg font-extrabold text-slate-800">Paciente</h2>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Expediente Clínico Activo</p>
+          <h2 id="user-display-name" class="text-base font-extrabold text-slate-800">Paciente</h2>
         </div>
         <button onclick="logout()" title="Cerrar Sesión" class="p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl transition">
-          <i data-lucide="log-out" class="w-5 h-5"></i>
+          <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-4 rounded-2xl text-xs space-y-1.5">
-        <div class="flex items-center justify-between text-teal-900 font-bold">
-          <span class="flex items-center space-x-1.5">
-            <i data-lucide="heart" class="w-4 h-4 text-rose-500 fill-rose-500"></i>
-            <span>Ritmo Cardíaco Basal:</span>
-          </span>
-          <span id="user-display-bpm" class="text-sm font-extrabold text-teal-950">75 BPM</span>
+      <!-- SELECTOR DE PESTAÑAS (TRIAJE VS MIS REGISTROS) -->
+      <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
+        <button onclick="cambiarPestanaHome('tab-triaje')" id="btn-tab-triaje" class="py-2.5 rounded-xl bg-white text-teal-800 shadow-sm transition">
+          🩺 Nueva Consulta
+        </button>
+        <button onclick="cambiarPestanaHome('tab-historial')" id="btn-tab-historial" class="py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition">
+          📋 Mis Registros (<span id="count-historial">0</span>)
+        </button>
+      </div>
+
+      <!-- CONTENIDO PESTAÑA 1: NUEVA CONSULTA -->
+      <div id="tab-triaje" class="flex-1 flex flex-col justify-between space-y-4">
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-3.5 rounded-2xl text-xs space-y-1.5">
+          <div class="flex items-center justify-between text-teal-900 font-bold">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="heart" class="w-4 h-4 text-rose-500 fill-rose-500"></i>
+              <span>Ritmo Cardíaco Basal:</span>
+            </span>
+            <span id="user-display-bpm" class="text-xs font-extrabold text-teal-950">75 BPM</span>
+          </div>
+          <p><strong class="text-slate-600">Base patológica:</strong> <span id="user-display-cronicas" class="text-slate-800">Ninguna</span></p>
+          <p><strong class="text-slate-600">Alergias:</strong> <span id="user-display-alergias" class="text-slate-800">Ninguna</span></p>
         </div>
-        <p><strong class="text-slate-600">Base patológica:</strong> <span id="user-display-cronicas" class="text-slate-800">Ninguna</span></p>
-        <p><strong class="text-slate-600">Alergias:</strong> <span id="user-display-alergias" class="text-slate-800">Ninguna</span></p>
+
+        <div class="flex flex-col items-center justify-center text-center space-y-3 py-6">
+          <button onclick="iniciarFlujoTriaje()" id="btn-trigger-mal" class="w-40 h-40 bg-gradient-to-tr from-rose-500 to-red-600 hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl flex flex-col items-center justify-center space-y-2 transition duration-200 ring-8 ring-rose-100 cursor-pointer">
+            <i data-lucide="heart-pulse" class="w-12 h-12 animate-pulse"></i>
+            <span class="text-sm font-extrabold uppercase tracking-wider leading-tight">Me Siento<br>Mal</span>
+          </button>
+          <p class="text-xs text-slate-500 max-w-xs font-medium">Pulso con osciloscopio real, anamnesis con IA y despacho médico.</p>
+        </div>
+
+        <!-- BOTÓN DE ENVÍO DE EMERGENCIA GPS -->
+        <button onclick="enviarUbicacionEmergenciaDirecta()" class="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-rose-700 font-bold text-xs flex items-center justify-center space-x-2 transition">
+          <i data-lucide="map-pin" class="w-4 h-4 text-rose-600"></i>
+          <span>Enviar mi Ubicación GPS a Emergencias</span>
+        </button>
       </div>
 
-      <!-- BOTÓN ME SIENTO MAL -->
-      <div class="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-        <button onclick="iniciarFlujoTriaje()" id="btn-trigger-mal" class="w-44 h-44 bg-gradient-to-tr from-rose-500 to-red-600 hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl flex flex-col items-center justify-center space-y-2 transition duration-200 ring-8 ring-rose-100 cursor-pointer">
-          <i data-lucide="heart-pulse" class="w-14 h-14 animate-pulse"></i>
-          <span class="text-base font-extrabold uppercase tracking-wider leading-tight">Me Siento<br>Mal</span>
-        </button>
-        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen por cámara, anamnesis con IA y triaje asistido.</p>
+      <!-- CONTENIDO PESTAÑA 2: HISTORIAL Y SEGUIMIENTO EN VIVO -->
+      <div id="tab-historial" class="hidden flex-1 flex flex-col space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Historial Clínico del Mes</h3>
+          <button onclick="cargarHistorial()" class="text-teal-600 text-xs font-bold flex items-center space-x-1 hover:underline">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+            <span>Actualizar</span>
+          </button>
+        </div>
+
+        <div id="historial-lista" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          <p class="text-xs text-slate-400 text-center py-8">Cargando tus consultas...</p>
+        </div>
       </div>
     </section>
 
     <!-- ========================================== -->
-    <!-- MODAL DE TRIAJE DINÁMICO -->
+    <!-- MODAL DE TRIAJE CON OSCILOSCOPIO Y PUSH-TO-TALK -->
     <!-- ========================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
+      <div class="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
         
         <button onclick="cerrarTriaje()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: SENSOR PPG AMBIENTAL (SIN BOTÓN DE FLASH) -->
-        <div id="step-ppg" class="space-y-3.5 text-center">
-          <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-            <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+        <!-- FASE 1: SENSOR PPG CON ONDA EN VIVO (OSCILOSCOPIO) -->
+        <div id="step-ppg" class="space-y-3 text-center">
+          <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mx-auto">
+            <i data-lucide="activity" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-800 text-base">Medición de Pulso</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Cubre suavemente la <strong>cámara trasera</strong> apuntando hacia una luz, foco o ventana.</p>
+            <h3 class="font-extrabold text-slate-800 text-sm">Medición con Onda Cardíaca</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">Cubre suavemente la <strong>cámara trasera</strong> orientándola hacia una fuente de luz (foco o ventana).</p>
           </div>
 
-          <!-- VISOR DE ONDA PULSÁTIL -->
-          <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-black flex items-center justify-center shadow-inner">
-            <video id="ppg-video" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
-            <canvas id="ppg-canvas" width="40" height="40" class="hidden"></canvas>
+          <!-- PANTALLA OSCILOSCOPIO TIPO MONITOR MÉDICO -->
+          <div class="relative w-full h-28 bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 shadow-inner flex flex-col justify-between p-2">
+            <video id="ppg-video" playsinline autoplay muted class="hidden"></video>
+            <canvas id="ppg-raw-canvas" width="40" height="40" class="hidden"></canvas>
             
-            <div id="ppg-heart-icon" class="z-10 text-rose-500 transition-transform duration-75">
-              <i data-lucide="heart" class="w-14 h-14 fill-rose-500"></i>
+            <div class="flex items-center justify-between text-[10px] text-emerald-400 font-mono z-10">
+              <span class="flex items-center space-x-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>ONDA CAPILAR PPG</span>
+              </span>
+              <span id="ppg-live-bpm" class="font-bold text-xs text-rose-400">-- BPM</span>
+            </div>
+
+            <!-- LIENZO DE LA ONDA ARTERIAL -->
+            <canvas id="ppg-chart-canvas" width="300" height="60" class="w-full h-16"></canvas>
+
+            <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono z-10">
+              <span>FILTRO: 45-150 BPM</span>
+              <span id="ppg-latidos-label">0/8 LATIDOS</span>
             </div>
           </div>
 
-          <div class="p-2.5 bg-amber-50 border border-amber-200/60 rounded-xl text-[11px] text-amber-800 font-medium">
-            💡 <strong>Consejo:</strong> Si estás en un lugar oscuro, acércate a una fuente de luz para que la cámara detecte el pulso capilar.
-          </div>
-
-          <!-- ESTADO Y CONTADOR -->
-          <div class="space-y-1.5">
-            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-150"></div>
+          <!-- BARRA DE LATIDOS REALES -->
+          <div class="space-y-1">
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-100"></div>
             </div>
-            <p id="ppg-status" class="text-xs font-bold text-amber-600">
-              Coloca tu dedo para detectar los latidos...
+            <p id="ppg-status" class="text-[11px] font-bold text-amber-600">
+              Coloca tu dedo para detectar tu pulso real...
             </p>
-            <p id="ppg-live-bpm" class="text-sm font-extrabold text-slate-800">-- BPM</p>
           </div>
 
-          <div class="pt-2 border-t border-slate-100">
+          <div class="pt-1 border-t border-slate-100">
             <button onclick="saltarPasoPPG()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
               <span>Saltar este paso (Continuar sin pulso)</span>
               <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
@@ -234,25 +281,40 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO INICIAL DE SÍNTOMAS -->
+        <!-- FASE 2: RELATO CON PUSH-TO-TALK (ESTILO WHATSAPP) -->
         <div id="step-sintomas" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
               Paso 2: ¿Qué sientes?
             </span>
-            <h3 class="font-extrabold text-slate-800 text-base mt-2">Describe tu molestia</h3>
-            <p class="text-xs text-slate-500">Cuéntale a la enfermera virtual lo que te pasa.</p>
+            <h3 class="font-extrabold text-slate-800 text-sm mt-1.5">Describe tu molestia</h3>
+            <p class="text-[11px] text-slate-500">Mantén presionado el micrófono para hablar o escribe en el recuadro.</p>
           </div>
 
-          <div class="flex flex-col items-center justify-center space-y-2 py-2">
-            <button id="btn-mic" onclick="toggleVoz()" type="button" class="w-16 h-16 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-lg transition active:scale-95">
-              <i id="mic-icon" data-lucide="mic" class="w-7 h-7"></i>
+          <!-- BOTÓN PUSH-TO-TALK ESTILO WHATSAPP -->
+          <div class="flex flex-col items-center justify-center space-y-2 py-1">
+            
+            <!-- ECUALIZADOR VISUAL DE AUDIO -->
+            <div id="voice-waves" class="hidden flex items-center space-x-1 h-7">
+              <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.1s"></span>
+              <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.3s"></span>
+              <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.2s"></span>
+              <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.4s"></span>
+              <span class="w-1 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.2s"></span>
+            </div>
+
+            <button id="btn-ptt-mic" 
+              class="w-18 h-18 p-4 bg-teal-600 hover:bg-teal-700 active:bg-rose-600 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer select-none">
+              <i id="ptt-icon" data-lucide="mic" class="w-8 h-8"></i>
             </button>
-            <span id="mic-status" class="text-[11px] font-bold text-slate-400">Toca el micrófono para hablar</span>
+            
+            <p id="ptt-hint" class="text-[11px] font-bold text-slate-400">
+              Mantén presionado para hablar (Suelta al terminar)
+            </p>
           </div>
 
           <div>
-            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me duele mucho el estómago, tengo náuseas y ardor..." 
+            <textarea id="txt-sintomas" rows="3" placeholder="Tu relato aparecerá aquí (puedes hablar varias veces y se acumulará)..." 
               class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
           </div>
 
@@ -262,17 +324,17 @@
           </button>
         </div>
 
-        <!-- FASE 3: CUESTIONARIO ADAPTATIVO GENERADO POR GROQ (HASTA 10 PREGUNTAS) -->
+        <!-- FASE 3: CUESTIONARIO ADAPTATIVO GENERADO POR GROQ -->
         <div id="step-cuestionario" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">
-              Paso 3: Preguntas de Precisión
+              Paso 3: Preguntas Clínicas
             </span>
-            <h3 class="font-extrabold text-slate-800 text-base mt-2">Preguntas Clínicas</h3>
-            <p id="cuestionario-subtitle" class="text-xs text-slate-500">Responde estas preguntas puntuales para orientar el caso.</p>
+            <h3 class="font-extrabold text-slate-800 text-sm mt-1.5">Preguntas de Precisión</h3>
+            <p id="cuestionario-subtitle" class="text-[11px] text-slate-500">Responde las preguntas seleccionadas para tu caso.</p>
           </div>
 
-          <div id="cuestionario-container" class="space-y-3.5 text-left max-h-[55vh] overflow-y-auto pr-1"></div>
+          <div id="cuestionario-container" class="space-y-3 text-left max-h-[50vh] overflow-y-auto pr-1"></div>
 
           <button onclick="enviarRespuestasFinales()" id="btn-evaluar-final" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
             <span>Obtener Diagnóstico y Derivación</span>
@@ -280,52 +342,54 @@
           </button>
         </div>
 
-        <!-- FASE 4: FOTO GUIADA (SI GROQ LO PIDE) -->
-        <div id="step-foto" class="hidden space-y-4 text-center">
-          <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
-            <i data-lucide="image-plus" class="w-6 h-6"></i>
+        <!-- FASE 4: FOTO GUIADA -->
+        <div id="step-foto" class="hidden space-y-3.5 text-center">
+          <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mx-auto">
+            <i data-lucide="image-plus" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-800 text-base">Foto de la Lesión</h3>
-            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión.</p>
+            <h3 class="font-extrabold text-slate-800 text-sm">Foto de la Lesión</h3>
+            <p id="motivo-foto-text" class="text-[11px] text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión.</p>
           </div>
 
           <div class="border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-2xl p-4 space-y-2">
             <input type="file" id="input-foto" accept="image/*" capture="environment" onchange="previewFoto(event)" class="hidden">
             <label for="input-foto" class="cursor-pointer block">
-              <div id="foto-preview-box" class="flex flex-col items-center justify-center py-4 text-amber-700 space-y-1">
-                <i data-lucide="camera" class="w-8 h-8"></i>
+              <div id="foto-preview-box" class="flex flex-col items-center justify-center py-3 text-amber-700 space-y-1">
+                <i data-lucide="camera" class="w-7 h-7"></i>
                 <span class="text-xs font-bold">Tomar Foto con Cámara</span>
               </div>
-              <img id="img-preview" class="hidden w-full h-36 object-cover rounded-xl shadow-sm">
+              <img id="img-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-sm">
             </label>
           </div>
 
-          <button onclick="finalizarTriajeConFoto()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition text-xs">
+          <button onclick="finalizarTriajeConFoto()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition text-xs">
             Confirmar y Enviar a Enfermería
           </button>
         </div>
 
         <!-- FASE 5: RESULTADO FINAL -->
-        <div id="step-resultado" class="hidden space-y-4 text-center">
-          <div id="res-badge-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto">
-            <i id="res-icon" data-lucide="check-circle" class="w-8 h-8"></i>
+        <div id="step-resultado" class="hidden space-y-3.5 text-center">
+          <div id="res-badge-icon" class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto">
+            <i id="res-icon" data-lucide="check-circle" class="w-6 h-6"></i>
           </div>
           
           <div>
-            <span id="res-severidad" class="text-xs font-black uppercase px-3 py-1 rounded-full text-white">Severidad</span>
+            <span id="res-severidad" class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-white">Severidad</span>
             <h3 id="res-sospecha" class="font-black text-slate-800 text-base mt-2">Sospecha Diagnóstica</h3>
-            <p id="res-justificacion" class="text-xs text-slate-500 mt-1.5 leading-relaxed">Justificación médica</p>
+            <p id="res-justificacion" class="text-xs text-slate-500 mt-1 leading-relaxed">Justificación médica</p>
           </div>
 
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
             <p><strong class="text-slate-700">Especialidad Asignada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
-            <p><strong class="text-slate-700">Pulso Detectado:</strong> <span id="res-bpm">75 BPM</span></p>
+            <p><strong class="text-slate-700">Pulso Registrado:</strong> <span id="res-bpm">75 BPM</span></p>
           </div>
 
-          <div class="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-[11px] text-teal-800 font-medium">
-            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para asignación de cita médica inmediata.
-          </div>
+          <!-- BOTÓN UBICACIÓN DE EMERGENCIA -->
+          <button onclick="enviarUbicacionParaAmbulancia()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-md">
+            <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+            <span>Compartir mi Ubicación GPS para Ambulancia</span>
+          </button>
 
           <button onclick="cerrarTriaje()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
             Entendido / Volver al Inicio
@@ -345,14 +409,15 @@
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
     let ppgStream = null;
-    let ppgTrack = null;
     let ppgAnimId = null;
     let bpmCalculado = 75;
     let resultadoIA = null;
     let recognition = null;
-    let escuchandoVoz = false;
+    let speechBuffer = "";
+    let ubicacionGPSActual = "Sin ubicación";
 
-    // PPG
+    // PPG OSCILOSCOPIO Y PICOS REALES
+    let waveHistory = new Array(60).fill(30);
     let bufferRojos = [];
     let picosDetectados = [];
     let latidosContabilizados = 0;
@@ -366,34 +431,22 @@
     function hablarAsistente(texto) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(texto);
-      utterance.lang = "es-PE";
-      utterance.rate = 0.92;
-      utterance.pitch = 1.1;
-
+      const u = new SpeechSynthesisUtterance(texto);
+      u.lang = "es-PE";
+      u.rate = 0.92;
+      u.pitch = 1.1;
       const voces = window.speechSynthesis.getVoices();
-      const vozFemenina = voces.find(v => 
-        v.lang.startsWith("es") && (
-          v.name.toLowerCase().includes("female") || 
-          v.name.toLowerCase().includes("mujer") || 
-          v.name.toLowerCase().includes("paulina") || 
-          v.name.toLowerCase().includes("sabina") || 
-          v.name.toLowerCase().includes("monica") || 
-          v.name.toLowerCase().includes("sofia") ||
-          v.name.toLowerCase().includes("google español")
-        )
-      ) || voces.find(v => v.lang.startsWith("es"));
-
-      if (vozFemenina) utterance.voice = vozFemenina;
-      window.speechSynthesis.speak(utterance);
+      const vf = voces.find(v => v.lang.startsWith("es") && (v.name.includes("female") || v.name.includes("mujer") || v.name.includes("paulina") || v.name.includes("monica")));
+      if (vf) u.voice = vf;
+      window.speechSynthesis.speak(u);
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      if (currentUser) renderHome(currentUser);
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      if (currentUser) {
+        renderHome(currentUser);
+        cargarHistorial();
       }
+      setupPushToTalk();
     });
 
     function switchView(viewId) {
@@ -402,6 +455,21 @@
       });
       document.getElementById(viewId).classList.remove("hidden");
       hideAlert();
+      lucide.createIcons();
+    }
+
+    function cambiarPestanaHome(tabId) {
+      ["tab-triaje", "tab-historial"].forEach(id => document.getElementById(id).classList.add("hidden"));
+      document.getElementById(tabId).classList.remove("hidden");
+
+      if (tabId === "tab-triaje") {
+        document.getElementById("btn-tab-triaje").className = "py-2.5 rounded-xl bg-white text-teal-800 shadow-sm transition";
+        document.getElementById("btn-tab-historial").className = "py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition";
+      } else {
+        document.getElementById("btn-tab-historial").className = "py-2.5 rounded-xl bg-white text-teal-800 shadow-sm transition";
+        document.getElementById("btn-tab-triaje").className = "py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition";
+        cargarHistorial();
+      }
       lucide.createIcons();
     }
 
@@ -430,28 +498,24 @@
       document.getElementById("alert-box").classList.add("hidden");
     }
 
-    // CALL BACKEND BLINDADO CONTRA ERRORES HTML DE GOOGLE
     async function callBackend(payload) {
       if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Coloca tu URL de Apps Script en la variable APPS_SCRIPT_URL.");
+        throw new Error("Coloca tu URL de Apps Script en APPS_SCRIPT_URL.");
       }
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      
       const rawText = await response.text();
       try {
         return JSON.parse(rawText);
       } catch (err) {
-        if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
-          throw new Error("Google Apps Script devolvió una página de login. Asegúrate de implementar con acceso 'Cualquier usuario' y usar la URL /exec.");
-        }
-        throw new Error("Respuesta inválida: " + rawText.substring(0, 100));
+        throw new Error("Error en servidor. Verifica que Apps Script esté desplegado como 'Cualquier usuario' y termine en /exec.");
       }
     }
 
+    // REGISTRO Y LOGIN
     async function handleRegister(e) {
       e.preventDefault();
       const btn = document.getElementById("btn-reg");
@@ -506,6 +570,7 @@
           localStorage.setItem("salud_paciente", JSON.stringify(res.user));
           currentUser = res.user;
           renderHome(res.user);
+          cargarHistorial();
         } else {
           showAlert(res.message, "error");
         }
@@ -531,18 +596,85 @@
       switchView("view-login");
     }
 
-    // MODAL TRIAJE
+    // ==========================================
+    // HISTORIAL Y SEGUIMIENTO EN VIVO
+    // ==========================================
+    async function cargarHistorial() {
+      if (!currentUser) return;
+      const listaBox = document.getElementById("historial-lista");
+      const countLabel = document.getElementById("count-historial");
+
+      try {
+        const res = await callBackend({
+          action: "obtener_historial_paciente",
+          dni: currentUser.dni
+        });
+
+        if (res.success && res.historial) {
+          countLabel.innerText = res.historial.length;
+          if (res.historial.length === 0) {
+            listaBox.innerHTML = `
+              <div class="text-center py-8 text-slate-400 text-xs">
+                <i data-lucide="clipboard-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                <p>No tienes consultas registradas en este mes.</p>
+              </div>`;
+            lucide.createIcons();
+            return;
+          }
+
+          listaBox.innerHTML = "";
+          res.historial.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "bg-white border border-slate-200 rounded-2xl p-3.5 space-y-2 shadow-sm text-xs";
+
+            let estadoBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">🟡 En Revisión</span>`;
+            if (item.estado === "DERIVADO") {
+              estadoBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Cita Derivada</span>`;
+            }
+
+            let severidadClass = item.severidad === "ROJO" ? "text-rose-600" : "text-amber-600";
+
+            card.innerHTML = `
+              <div class="flex items-center justify-between border-b pb-1.5">
+                <span class="font-mono text-[10px] text-slate-400">${item.idTriaje}</span>
+                ${estadoBadge}
+              </div>
+              <div>
+                <p class="font-black text-slate-800 text-xs">${item.sospecha || "Evaluación Clínica"}</p>
+                <p class="text-[11px] text-slate-500">${item.fecha}</p>
+              </div>
+              <div class="bg-slate-50 p-2 rounded-xl space-y-1 text-[11px]">
+                <p><strong>Especialidad:</strong> <span class="text-teal-700 font-bold">${item.especialidadFinal}</span></p>
+                <p><strong>Médico / Enfermera:</strong> <span class="text-slate-700">${item.enfermeraResponsable}</span></p>
+                <p><strong>Notas Clínicas:</strong> <span class="text-slate-600 italic">"${item.notasClinicas}"</span></p>
+              </div>
+            `;
+            listaBox.appendChild(card);
+          });
+          lucide.createIcons();
+        }
+      } catch (err) {
+        listaBox.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">Error al cargar historial: ${err.message}</p>`;
+      }
+    }
+
+    // ==========================================
+    // FLUJO DE TRIAJE
+    // ==========================================
     function iniciarFlujoTriaje() {
+      // Limpiar datos previos
+      document.getElementById("txt-sintomas").value = "";
+      speechBuffer = "";
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
-      iniciarSensorPPGAmbiental();
-
-      hablarAsistente("Hola, mantén la calma. Por favor, apoya suavemente tu dedo cubriendo la cámara trasera apuntando hacia una luz, foco o ventana.");
+      iniciarSensorPPGOsciloscopio();
+      hablarAsistente("Hola, mantén la calma. Cubre suavemente la cámara trasera orientándola hacia una luz. Verás tu onda cardíaca en pantalla.");
     }
 
     function cerrarTriaje() {
       detenerSensorPPG();
       detenerVoz();
+      document.getElementById("txt-sintomas").value = ""; // Limpieza automática
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       document.getElementById("modal-triaje").classList.add("hidden");
     }
@@ -555,94 +687,98 @@
       lucide.createIcons();
     }
 
-    // SENSOR AMBIENTAL (SIN FLASH)
-    async function iniciarSensorPPGAmbiental() {
+    // ==========================================
+    // PPG CON OSCILOSCOPIO Y PICOS REALES EN CANVAS
+    // ==========================================
+    async function iniciarSensorPPGOsciloscopio() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
       const liveBpm = document.getElementById("ppg-live-bpm");
+      const latidosLabel = document.getElementById("ppg-latidos-label");
       const video = document.getElementById("ppg-video");
-      const canvas = document.getElementById("ppg-canvas");
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      const heartIcon = document.getElementById("ppg-heart-icon");
+      const rawCanvas = document.getElementById("ppg-raw-canvas");
+      const rawCtx = rawCanvas.getContext("2d", { willReadFrequently: true });
+      const chartCanvas = document.getElementById("ppg-chart-canvas");
+      const chartCtx = chartCanvas.getContext("2d");
 
+      waveHistory = new Array(60).fill(30);
       bufferRojos = [];
       picosDetectados = [];
       latidosContabilizados = 0;
       ultimoPicoTiempo = 0;
       progress.style.width = "0%";
       liveBpm.innerText = "-- BPM";
-      status.innerText = "Iniciando cámara trasera...";
+      latidosLabel.innerText = "0/8 LATIDOS";
+      status.innerText = "Conectando cámara capilar...";
 
       try {
         ppgStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 320 },
-            height: { ideal: 240 }
-          }
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 320 }, height: { ideal: 240 } }
         });
-
         video.srcObject = ppgStream;
         await video.play();
-        ppgTrack = ppgStream.getVideoTracks()[0];
 
-        function procesarFotograma() {
+        function renderFrame() {
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            ctx.drawImage(video, 0, 0, 40, 40);
-            const frame = ctx.getImageData(0, 0, 40, 40).data;
+            rawCtx.drawImage(video, 0, 0, 40, 40);
+            const frame = rawCtx.getImageData(0, 0, 40, 40).data;
             
-            let rSum = 0, gSum = 0, bSum = 0;
+            let rSum = 0, gSum = 0;
             for (let i = 0; i < frame.length; i += 4) {
               rSum += frame[i];
               gSum += frame[i + 1];
-              bSum += frame[i + 2];
             }
             const px = frame.length / 4;
             const avgR = rSum / px;
             const avgG = gSum / px;
 
-            // Dedo sobre la cámara con luz ambiental
-            const dedoPresente = avgR > 65 && avgR > (avgG * 1.2);
+            // Dedo cubriendo la cámara frente a luz
+            const dedoValido = avgR > 60 && avgR > (avgG * 1.15);
 
-            if (dedoPresente) {
+            if (dedoValido) {
               const ahora = performance.now();
-              bufferRojos.push({ valor: avgR, tiempo: ahora });
-              if (bufferRojos.length > 30) bufferRojos.shift();
+              bufferRojos.push({ val: avgR, t: ahora });
+              if (bufferRojos.length > 25) bufferRojos.shift();
 
-              if (bufferRojos.length >= 10) {
-                const promedioMovil = bufferRojos.reduce((acc, curr) => acc + curr.valor, 0) / bufferRojos.length;
-                const ultimo = bufferRojos[bufferRojos.length - 1].valor;
-                const anterior = bufferRojos[bufferRojos.length - 2].valor;
+              // FILTRADO Y DETECCIÓN DE PICO REAL
+              if (bufferRojos.length >= 8) {
+                const promedio = bufferRojos.reduce((a, b) => a + b.val, 0) / bufferRojos.length;
+                const ultimo = bufferRojos[bufferRojos.length - 1].val;
+                const anterior = bufferRojos[bufferRojos.length - 2].val;
+                const diff = (ultimo - promedio);
 
-                if (ultimo > promedioMovil * 1.006 && ultimo < anterior && (ahora - ultimoPicoTiempo > 450)) {
+                // Mapear osciloscopio
+                waveHistory.shift();
+                const yPlot = Math.max(5, Math.min(55, 30 - (diff * 4.5)));
+                waveHistory.push(yPlot);
+
+                // Detección del latido
+                if (ultimo > promedio * 1.005 && ultimo < anterior && (ahora - ultimoPicoTiempo > 420)) {
                   ultimoPicoTiempo = ahora;
                   latidosContabilizados++;
                   picosDetectados.push(ahora);
 
-                  heartIcon.classList.add("beat-scale");
-                  setTimeout(() => heartIcon.classList.remove("beat-scale"), 100);
+                  latidosLabel.innerText = `${latidosContabilizados}/${LATIDOS_OBJETIVO} LATIDOS`;
 
                   if (picosDetectados.length >= 2) {
-                    const ultimosDos = picosDetectados.slice(-2);
-                    const deltaMs = ultimosDos[1] - ultimosDos[0];
-                    const bpmInstantaneo = Math.round(60000 / deltaMs);
-                    if (bpmInstantaneo >= 48 && bpmInstantaneo <= 150) {
-                      liveBpm.innerText = bpmInstantaneo + " BPM";
+                    const ultimos = picosDetectados.slice(-2);
+                    const instantBpm = Math.round(60000 / (ultimos[1] - ultimos[0]));
+                    if (instantBpm >= 45 && instantBpm <= 150) {
+                      liveBpm.innerText = instantBpm + " BPM";
                     }
                   }
 
-                  const progreso = Math.min(100, Math.round((latidosContabilizados / LATIDOS_OBJETIVO) * 100));
-                  progress.style.width = progreso + "%";
-                  status.innerText = `Detectando latidos reales (${latidosContabilizados}/${LATIDOS_OBJETIVO})...`;
-                  status.className = "text-xs font-bold text-rose-600";
+                  const porc = Math.min(100, Math.round((latidosContabilizados / LATIDOS_OBJETIVO) * 100));
+                  progress.style.width = porc + "%";
+                  status.innerText = `Registrando latidos reales (${porc}%)...`;
+                  status.className = "text-[11px] font-bold text-rose-600";
 
                   if (latidosContabilizados >= LATIDOS_OBJETIVO) {
                     const deltas = [];
                     for (let k = 1; k < picosDetectados.length; k++) {
                       deltas.push(picosDetectados[k] - picosDetectados[k - 1]);
                     }
-                    const promedioDelta = deltas.reduce((a, b) => a + b, 0) / deltas.length;
-                    bpmCalculado = Math.round(60000 / promedioDelta);
+                    bpmCalculado = Math.round(60000 / (deltas.reduce((a, b) => a + b, 0) / deltas.length));
                     if (bpmCalculado < 50 || bpmCalculado > 140) bpmCalculado = 76;
 
                     detenerSensorPPG();
@@ -652,18 +788,33 @@
                 }
               }
             } else {
+              waveHistory.shift();
+              waveHistory.push(30);
               status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara hacia la luz";
-              status.className = "text-xs font-bold text-amber-600";
+              status.className = "text-[11px] font-bold text-amber-600";
             }
-          }
-          ppgAnimId = requestAnimationFrame(procesarFotograma);
-        }
 
-        ppgAnimId = requestAnimationFrame(procesarFotograma);
+            // DIBUJAR OSCILOSCOPIO VERDE EN TIEMPO REAL
+            chartCtx.fillStyle = "rgba(2, 6, 23, 0.35)";
+            chartCtx.fillRect(0, 0, chartCanvas.width, chartCanvas.height);
+            chartCtx.strokeStyle = "#10b981"; // Verde esmeralda médico
+            chartCtx.lineWidth = 2;
+            chartCtx.beginPath();
+            const stepX = chartCanvas.width / waveHistory.length;
+            for (let i = 0; i < waveHistory.length; i++) {
+              const x = i * stepX;
+              const y = waveHistory[i];
+              if (i === 0) chartCtx.moveTo(x, y);
+              else chartCtx.lineTo(x, y);
+            }
+            chartCtx.stroke();
+          }
+          ppgAnimId = requestAnimationFrame(renderFrame);
+        }
+        ppgAnimId = requestAnimationFrame(renderFrame);
 
       } catch (err) {
-        console.warn("Cámara no disponible:", err);
-        status.innerText = "Cámara no accesible. Puedes pulsar 'Saltar este paso'.";
+        status.innerText = "Cámara no disponible. Pulsa 'Saltar este paso'.";
       }
     }
 
@@ -672,7 +823,6 @@
       if (ppgStream) {
         ppgStream.getTracks().forEach(t => t.stop());
         ppgStream = null;
-        ppgTrack = null;
       }
     }
 
@@ -684,78 +834,87 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Pulso capturado con éxito. Ahora describe con tranquilidad qué molestias sientes.");
+      hablarAsistente("Pulso capturado con éxito. Ahora mantén presionado el micrófono para hablar y cuéntame tus molestias.");
     }
 
-    // VOZ
-    function toggleVoz() {
-      if (escuchandoVoz) detenerVoz();
-      else iniciarVoz();
-    }
+    // ==========================================
+    // PUSH-TO-TALK ESTILO WHATSAPP (ACUMULATIVO)
+    // ==========================================
+    function setupPushToTalk() {
+      const btn = document.getElementById("btn-ptt-mic");
+      const waves = document.getElementById("voice-waves");
+      const hint = document.getElementById("ptt-hint");
+      const txt = document.getElementById("txt-sintomas");
 
-    function iniciarVoz() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("Tu navegador no soporta micrófono. Escribe en el cuadro de texto.");
-        return;
-      }
+      if (!SpeechRecognition) return;
 
       recognition = new SpeechRecognition();
       recognition.lang = "es-PE";
       recognition.continuous = true;
       recognition.interimResults = true;
 
-      const txt = document.getElementById("txt-sintomas");
-      const btn = document.getElementById("btn-mic");
-      const status = document.getElementById("mic-status");
-
-      recognition.onstart = () => {
-        escuchandoVoz = true;
-        btn.classList.remove("bg-teal-500");
-        btn.classList.add("bg-rose-500", "animate-pulse");
-        status.innerText = "Te escucho... Habla con calma";
-      };
+      let tempTranscript = "";
 
       recognition.onresult = (e) => {
-        let transcript = "";
+        tempTranscript = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          transcript += e.results[i][0].transcript;
+          tempTranscript += e.results[i][0].transcript;
         }
-        txt.value = transcript;
       };
 
-      recognition.onerror = () => detenerVoz();
-      recognition.onend = () => detenerVoz();
-      recognition.start();
+      function startRecording(e) {
+        if (e) e.preventDefault();
+        tempTranscript = "";
+        try { recognition.start(); } catch(err){}
+        waves.classList.remove("hidden");
+        btn.classList.remove("bg-teal-600");
+        btn.classList.add("bg-rose-600", "scale-105");
+        hint.innerText = "🔴 Grabando... Suelta para pausar";
+        hint.className = "text-[11px] font-bold text-rose-600";
+      }
+
+      function stopRecording(e) {
+        if (e) e.preventDefault();
+        try { recognition.stop(); } catch(err){}
+        waves.classList.add("hidden");
+        btn.classList.remove("bg-rose-600", "scale-105");
+        btn.classList.add("bg-teal-600");
+        hint.innerText = "Mantén presionado para seguir hablando";
+        hint.className = "text-[11px] font-bold text-slate-400";
+
+        // Acumular texto sin borrar lo anterior
+        if (tempTranscript.trim().length > 0) {
+          const actual = txt.value.trim();
+          txt.value = actual ? (actual + " " + tempTranscript.trim()) : tempTranscript.trim();
+        }
+      }
+
+      // Soporte Móvil (Touch) y Computadora (Mouse)
+      btn.addEventListener("touchstart", startRecording, { passive: false });
+      btn.addEventListener("touchend", stopRecording, { passive: false });
+      btn.addEventListener("mousedown", startRecording);
+      btn.addEventListener("mouseup", stopRecording);
     }
 
     function detenerVoz() {
-      if (recognition) {
-        try { recognition.stop(); } catch(e){}
-        recognition = null;
-      }
-      escuchandoVoz = false;
-      const btn = document.getElementById("btn-mic");
-      const status = document.getElementById("mic-status");
-      if (btn) {
-        btn.classList.remove("bg-rose-500", "animate-pulse");
-        btn.classList.add("bg-teal-500");
-      }
-      if (status) status.innerText = "Toca el micrófono para hablar";
+      if (recognition) { try { recognition.stop(); } catch(e){} }
     }
 
-    // CUESTIONARIO ADAPTATIVO (HASTA 10 PREGUNTAS)
+    // ==========================================
+    // CUESTIONARIO ADAPTATIVO
+    // ==========================================
     async function solicitarCuestionarioIA() {
       const sintomas = document.getElementById("txt-sintomas").value.trim();
       if (!sintomas) {
-        alert("Por favor indica qué molestia tienes antes de continuar.");
+        alert("Por favor describe tus molestias antes de continuar.");
         return;
       }
 
       detenerVoz();
       const btn = document.getElementById("btn-iniciar-preguntas");
       btn.disabled = true;
-      btn.innerText = "Formulando cuestionario médico...";
+      btn.innerText = "Generando preguntas clínicas a tu medida...";
 
       const payload = {
         action: "generar_preguntas",
@@ -771,7 +930,7 @@
           preguntasActuales = res.preguntas;
           renderCuestionario(res.preguntas);
           mostrarPasoModal("step-cuestionario");
-          hablarAsistente(`Para mayor precisión médica, por favor responde estas ${res.preguntas.length} preguntas breves.`);
+          hablarAsistente(`Por favor responde estas ${res.preguntas.length} preguntas breves.`);
         } else {
           alert("Aviso: " + res.message);
         }
@@ -793,7 +952,7 @@
 
       preguntas.forEach((p, idx) => {
         const card = document.createElement("div");
-        card.className = "bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2";
+        card.className = "bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2";
         
         const label = document.createElement("p");
         label.className = "text-xs font-bold text-slate-800 leading-snug";
@@ -801,18 +960,18 @@
         card.appendChild(label);
 
         const optionsBox = document.createElement("div");
-        optionsBox.className = "flex flex-col space-y-1.5";
+        optionsBox.className = "flex flex-col space-y-1";
 
         p.opciones.forEach(op => {
           const btnOp = document.createElement("button");
           btnOp.type = "button";
-          btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
+          btnOp.className = "opcion-btn text-left text-xs p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
           btnOp.innerText = op;
           btnOp.onclick = () => {
             optionsBox.querySelectorAll(".opcion-btn").forEach(b => {
-              b.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
+              b.className = "opcion-btn text-left text-xs p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
             });
-            btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50 font-bold transition text-indigo-900";
+            btnOp.className = "opcion-btn text-left text-xs p-2 rounded-xl border-2 border-indigo-600 bg-indigo-50 font-bold transition text-indigo-900";
             respuestasSeleccionadas[p.id] = { pregunta: p.pregunta, respuesta: op };
           };
           optionsBox.appendChild(btnOp);
@@ -831,7 +990,7 @@
 
       const btn = document.getElementById("btn-evaluar-final");
       btn.disabled = true;
-      btn.innerText = "Analizando diagnóstico con Groq...";
+      btn.innerText = "Evaluando diagnóstico clínico...";
 
       let textoRespuestas = "";
       for (const id in respuestasSeleccionadas) {
@@ -849,18 +1008,20 @@
         bpmMedido: bpmCalculado,
         sintomasRelatados: document.getElementById("txt-sintomas").value.trim(),
         respuestasCuestionario: textoRespuestas,
-        urlFoto: "Sin foto"
+        urlFoto: "Sin foto",
+        ubicacionGPS: ubicacionGPSActual
       };
 
       try {
         const res = await callBackend(payload);
         if (res.success) {
           resultadoIA = res.evaluacion;
+          cargarHistorial(); // Refrescar historial
 
           if (resultadoIA.requiere_foto) {
             document.getElementById("motivo-foto-text").innerText = resultadoIA.motivo_foto || "Se requiere una fotografía de la zona afectada para la evaluación.";
             mostrarPasoModal("step-foto");
-            hablarAsistente("Para mayor precisión médica, por favor tómale una foto de cerca a la zona afectada con buena luz.");
+            hablarAsistente("Para mayor precisión de los médicos, por favor tómale una foto de cerca a la zona afectada con buena luz.");
           } else {
             mostrarResultadoFinal(resultadoIA);
           }
@@ -901,16 +1062,16 @@
       const icon = document.getElementById("res-icon");
 
       if (evaluacion.severidad === "ROJO") {
-        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-red-600";
-        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-red-100 text-red-600";
+        badge.className = "text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-white bg-red-600";
+        iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center mx-auto bg-red-100 text-red-600";
         icon.setAttribute("data-lucide", "alert-triangle");
       } else if (evaluacion.severidad === "NARANJA" || evaluacion.severidad === "AMARILLO") {
-        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-amber-500";
-        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-amber-100 text-amber-600";
+        badge.className = "text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-white bg-amber-500";
+        iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center mx-auto bg-amber-100 text-amber-600";
         icon.setAttribute("data-lucide", "alert-circle");
       } else {
-        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-emerald-600";
-        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
+        badge.className = "text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-white bg-emerald-600";
+        iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
         icon.setAttribute("data-lucide", "check-circle");
       }
 
@@ -920,8 +1081,42 @@
       document.getElementById("res-especialidad").innerText = evaluacion.especialidad_derivacion;
       document.getElementById("res-bpm").innerText = bpmCalculado + " BPM (Basal: " + (currentUser?.bpmBasal || 75) + " BPM)";
 
-      hablarAsistente(`Tu evaluación clínica ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido al panel de enfermería.`);
+      hablarAsistente(`Tu evaluación ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido a enfermería.`);
       lucide.createIcons();
+    }
+
+    // ==========================================
+    // GEOLOCALIZACIÓN GPS PARA EMERGENCIAS / AMBULANCIA
+    // ==========================================
+    function obtenerCoordenadasGPS(callback) {
+      if (!navigator.geolocation) {
+        alert("Tu dispositivo no soporta geolocalización GPS.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          ubicacionGPSActual = `https://www.google.com/maps?q=${lat},${lng}`;
+          if (callback) callback(ubicacionGPSActual);
+        },
+        (err) => {
+          alert("No se pudo obtener la ubicación GPS. Verifica que tengas el GPS encendido.");
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function enviarUbicacionParaAmbulancia() {
+      obtenerCoordenadasGPS((link) => {
+        alert("📍 Ubicación GPS capturada y enlazada al ticket de enfermería para despacho de ambulancia:\n" + link);
+      });
+    }
+
+    function enviarUbicacionEmergenciaDirecta() {
+      obtenerCoordenadasGPS((link) => {
+        alert("📍 Ubicación GPS transmitida exitosamente a la central de urgencias:\n" + link);
+      });
     }
   </script>
 </body>
