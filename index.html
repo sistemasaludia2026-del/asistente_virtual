@@ -24,8 +24,8 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
-    // PEGA AQUÍ TU URL DE APPS SCRIPT
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exe"; 
+    // PEGA AQUÍ TU URL DE APPS SCRIPT:
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exe"; // Reemplaza por tu URL completa
   </script>
 
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
@@ -199,7 +199,7 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: SENSOR PPG CON RAYO FLOTANTE -->
+        <!-- FASE 1: SENSOR PPG -->
         <div id="step-ppg" class="space-y-3.5 text-center">
           <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
             <i data-lucide="camera" class="w-6 h-6"></i>
@@ -211,20 +211,23 @@
 
           <!-- VISOR DE CÁMARA CON SENSOR -->
           <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-black flex items-center justify-center shadow-inner">
-            <video id="ppg-video" playsinline autoplay class="absolute inset-0 w-full h-full object-cover"></video>
+            <video id="ppg-video" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
             <canvas id="ppg-canvas" width="50" height="50" class="hidden"></canvas>
             <div id="ppg-heart-icon" class="z-10 text-rose-500 pulse-ring">
               <i data-lucide="heart" class="w-12 h-12 fill-rose-500"></i>
             </div>
           </div>
 
-          <!-- BOTÓN FLOTANTE RAYO (FLASH) PARPADEANTE -->
+          <!-- BOTÓN FLOTANTE RAYO (FLASH) -->
           <div>
             <button id="btn-toggle-flash" onclick="toggleFlashManual()" type="button" 
               class="flash-btn-pulse inline-flex items-center space-x-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black rounded-full shadow-lg text-xs transition active:scale-95">
               <i data-lucide="zap" class="w-4 h-4 fill-amber-950"></i>
-              <span id="flash-status-text">Encender Linterna / Flash</span>
+              <span id="flash-status-text">Activar Linterna ⚡</span>
             </button>
+            <p id="flash-hint" class="hidden text-[10px] text-amber-700 mt-1.5 font-medium">
+              💡 Si tu linterna no enciende, acércate a una luz o pulsa saltar paso.
+            </p>
           </div>
 
           <!-- ESTADO Y BARRA -->
@@ -344,21 +347,17 @@
     let recognition = null;
     let escuchandoVoz = false;
     let lecturasValidas = 0;
-    const TOTAL_LECTURAS_REQUERIDAS = 45; // ~9 a 10 segundos continuos con dedo
+    const TOTAL_LECTURAS_REQUERIDAS = 35; // ~7 a 8 segundos continuos con dedo
 
-    // ==========================================
-    // ASISTENTE DE VOZ DE MUJER TRANQUILA
-    // ==========================================
     function hablarAsistente(texto) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(texto);
       utterance.lang = "es-PE";
-      utterance.rate = 0.92; // Ritmo pausado y tranquilo
-      utterance.pitch = 1.1; // Tono cálido femenino
+      utterance.rate = 0.92;
+      utterance.pitch = 1.1;
 
-      // Seleccionar voz femenina si está disponible
       const voces = window.speechSynthesis.getVoices();
       const vozFemenina = voces.find(v => 
         v.lang.startsWith("es") && (
@@ -508,9 +507,7 @@
       switchView("view-login");
     }
 
-    // ==========================================
-    // FLUJO DE TRIAJE CON VOZ TRANQUILA
-    // ==========================================
+    // FLUJO TRIAJE
     function iniciarFlujoTriaje() {
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
@@ -534,7 +531,7 @@
       lucide.createIcons();
     }
 
-    // SENSOR PPG + RAYO DE FLASH
+    // PPG + SENSOR DE COLOR CAPILAR
     async function iniciarSensorPPG() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
@@ -545,7 +542,7 @@
       lecturasValidas = 0;
       progress.style.width = "0%";
       flashEncendido = false;
-      document.getElementById("flash-status-text").innerText = "Encender Linterna / Flash";
+      document.getElementById("flash-status-text").innerText = "Activar Linterna ⚡";
 
       try {
         ppgStream = await navigator.mediaDevices.getUserMedia({
@@ -560,7 +557,7 @@
         await video.play();
         ppgTrack = ppgStream.getVideoTracks()[0];
 
-        // Intento automático de torch
+        // Intentar activar linterna si el navegador lo permite nativamente
         try {
           const cap = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
           if (cap.torch) {
@@ -585,8 +582,8 @@
             const avgG = gSum / px;
             const avgB = bSum / px;
 
-            // Validación capilar
-            const esDedoValido = avgR > 90 && avgR > (avgG * 1.3) && (avgG > avgB || avgR > 130);
+            // Validación capilar (predominancia del canal rojo por la sangre)
+            const esDedoValido = avgR > 75 && avgR > (avgG * 1.25);
 
             if (esDedoValido) {
               lecturasValidas++;
@@ -601,7 +598,7 @@
                 pasarASintomas();
               }
             } else {
-              status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara y el flash";
+              status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara trasera";
               status.className = "text-xs font-bold text-amber-600";
             }
           }
@@ -614,18 +611,19 @@
     }
 
     async function toggleFlashManual() {
-      if (!ppgTrack) {
-        alert("Iniciando cámara... intenta de nuevo en un segundo.");
-        return;
-      }
+      if (!ppgTrack) return;
       try {
-        flashEncendido = !flashEncendido;
-        await ppgTrack.applyConstraints({
-          advanced: [{ torch: flashEncendido }]
-        });
-        document.getElementById("flash-status-text").innerText = flashEncendido ? "Linterna Activa ⚡" : "Encender Linterna / Flash";
+        const cap = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
+        if (cap.torch) {
+          flashEncendido = !flashEncendido;
+          await ppgTrack.applyConstraints({ advanced: [{ torch: flashEncendido }] });
+          document.getElementById("flash-status-text").innerText = flashEncendido ? "Linterna Activa ⚡" : "Activar Linterna ⚡";
+        } else {
+          // Mostrar aviso sin bloquear la pantalla
+          document.getElementById("flash-hint").classList.remove("hidden");
+        }
       } catch (err) {
-        alert("Tu teléfono no permite encender el flash por el navegador. Por favor baja la cortina de notificaciones de tu celular y enciende la linterna manualmente, o pulsa 'Saltar este paso'.");
+        document.getElementById("flash-hint").classList.remove("hidden");
       }
     }
 
@@ -649,7 +647,7 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Muy bien. Ahora cuéntame con tranquilidad qué sientes exactamente. Dime en qué parte de tu cuerpo te duele, qué tipo de molestia es y cuántos días llevas así. Toca el micrófono cuando estés listo.");
+      hablarAsistente("Muy bien. Ahora cuéntame con tranquilidad qué sientes exactamente. Dime en qué parte de tu cuerpo te duele, qué molestia es y cuántos días llevas así. Toca el micrófono cuando estés listo.");
     }
 
     // VOZ
@@ -748,7 +746,7 @@
             mostrarResultadoFinal(resultadoIA);
           }
         } else {
-          alert("Error del servidor: " + res.message);
+          alert("Aviso del Servidor: " + res.message);
         }
       } catch (err) {
         alert("Error de conexión: " + err.message);
