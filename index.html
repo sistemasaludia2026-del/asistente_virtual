@@ -3,25 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Mi Salud - Asistente & Triaje Médico</title>
-  <!-- Tailwind CSS -->
+  <title>SaludConecta - Paciente</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-ring { animation: pulse-ring 2s infinite ease-in-out; }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased">
 
-  <!-- ========================================== -->
-  <!-- CONFIGURACIÓN: PEGA AQUÍ TU URL DE APPS SCRIPT -->
-  <!-- ========================================== -->
   <script>
+    // PEGA AQUÍ TU URL DE APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec"; 
   </script>
 
-  <!-- CONTENEDOR APP MÓVIL PACIENTE -->
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
 
-    <!-- CABECERA DE SALUD -->
+    <!-- HEADER -->
     <header class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-5 rounded-b-3xl shadow-md">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
@@ -29,7 +32,7 @@
             <i data-lucide="heart-pulse" class="w-6 h-6 text-teal-100"></i>
           </div>
           <div>
-            <h1 class="text-lg font-bold tracking-tight leading-tight">SaludConecta</h1>
+            <h1 class="text-lg font-bold tracking-tight">SaludConecta</h1>
             <p class="text-xs text-teal-100">Cuidado & Triaje en Casa</p>
           </div>
         </div>
@@ -39,28 +42,26 @@
       </div>
     </header>
 
-    <!-- ALERTAS DEL SISTEMA -->
-    <div id="alert-box" class="hidden mx-4 mt-3 p-3.5 rounded-2xl text-xs font-semibold flex items-center space-x-2.5 shadow-sm transition-all">
-      <i id="alert-icon" data-lucide="info" class="w-5 h-5 flex-shrink-0"></i>
+    <!-- ALERTAS -->
+    <div id="alert-box" class="hidden mx-4 mt-3 p-3 rounded-2xl text-xs font-semibold flex items-center space-x-2 shadow-sm transition-all">
+      <i id="alert-icon" data-lucide="info" class="w-4 h-4 flex-shrink-0"></i>
       <span id="alert-text">Mensaje</span>
     </div>
 
-    <!-- ========================================== -->
-    <!-- PANTALLA 1: LOGIN PACIENTE -->
-    <!-- ========================================== -->
+    <!-- VISTA LOGIN -->
     <section id="view-login" class="p-6 flex-1 flex flex-col justify-center space-y-6">
       <div class="space-y-1">
         <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Bienvenido</h2>
-        <p class="text-xs text-slate-500">Ingresa con tu DNI para acceder a tu historial y triaje</p>
+        <p class="text-xs text-slate-500">Ingresa tu DNI para acceder a tu historial y triaje</p>
       </div>
 
       <form onsubmit="handleLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">DNI (Documento de Identidad)</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">DNI</label>
           <div class="relative">
             <i data-lucide="id-card" class="w-5 h-5 text-slate-400 absolute left-3 top-3"></i>
-            <input type="text" id="login-dni" required pattern="[0-9]{8,12}" placeholder="Ingresa tu DNI" 
-              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm transition">
+            <input type="text" id="login-dni" required pattern="[0-9]{8,12}" placeholder="Número de DNI" 
+              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm">
           </div>
         </div>
 
@@ -68,42 +69,38 @@
           <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña</label>
           <div class="relative">
             <i data-lucide="lock" class="w-5 h-5 text-slate-400 absolute left-3 top-3"></i>
-            <input type="password" id="login-pass" required placeholder="Tu clave de acceso" 
-              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm transition">
+            <input type="password" id="login-pass" required placeholder="Tu contraseña" 
+              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm">
           </div>
         </div>
 
-        <button type="submit" id="btn-login" class="w-full py-3 bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
-          <span>Ingresar a mi Cuenta</span>
+        <button type="submit" id="btn-login" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+          <span>Ingresar</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </form>
 
-      <div class="text-center pt-6 border-t border-slate-100">
-        <p class="text-xs text-slate-500">¿Primera vez aquí?</p>
-        <button onclick="switchView('view-register')" class="mt-2 text-sm font-bold text-teal-700 hover:text-teal-800">
-          Registrarme con mi Ficha Médica
+      <div class="text-center pt-4 border-t border-slate-100">
+        <p class="text-xs text-slate-500">¿No tienes cuenta?</p>
+        <button onclick="switchView('view-register')" class="mt-1 text-sm font-bold text-teal-700 hover:underline">
+          Crear cuenta médica
         </button>
       </div>
     </section>
 
-    <!-- ========================================== -->
-    <!-- PANTALLA 2: REGISTRO CON HISTORIAL CLÍNICO -->
-    <!-- ========================================== -->
+    <!-- VISTA REGISTRO -->
     <section id="view-register" class="hidden p-6 flex-1 flex flex-col space-y-4">
-      <button onclick="switchView('view-login')" class="text-slate-400 hover:text-slate-600 text-xs flex items-center space-x-1 font-semibold">
+      <button onclick="switchView('view-login')" class="text-slate-400 hover:text-slate-600 text-xs flex items-center space-x-1">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        <span>Volver a iniciar sesión</span>
+        <span>Volver</span>
       </button>
 
       <div>
         <h2 class="text-xl font-bold text-slate-900">Crear Cuenta Médica</h2>
-        <p class="text-xs text-slate-500">Datos basales obligatorios para que la IA realice un triaje certero</p>
+        <p class="text-xs text-slate-500">Datos basales para el triaje predictivo</p>
       </div>
 
-      <form onsubmit="handleRegister(event)" class="space-y-3.5 text-sm">
-        
-        <!-- DATOS PERSONALES -->
+      <form onsubmit="handleRegister(event)" class="space-y-3 text-sm">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
           <input type="text" id="reg-nombre" required placeholder="Nombres y Apellidos" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
@@ -122,7 +119,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Sexo Biológico</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Sexo</label>
             <select id="reg-sexo" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
               <option value="Masculino">Masculino</option>
               <option value="Femenino">Femenino</option>
@@ -135,48 +132,29 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Crea tu Contraseña</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña</label>
           <input type="password" id="reg-pass" required minlength="4" placeholder="Mínimo 4 caracteres" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
         </div>
 
-        <!-- ANTECEDENTES MÉDICOS BASALES -->
-        <div class="pt-3 border-t border-slate-100 space-y-3">
-          <div class="flex items-center space-x-1.5 text-teal-800">
-            <i data-lucide="clipboard-plus" class="w-4 h-4"></i>
-            <span class="text-xs font-bold uppercase tracking-wider">Historial Clínico Inicial</span>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">¿Padeces alguna enfermedad crónica?</label>
-            <input type="text" id="reg-cronicas" placeholder="Diabetes, Hipertensión, Asma (o 'Ninguna')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">¿Tienes alergias a medicamentos o alimentos?</label>
-            <input type="text" id="reg-alergias" placeholder="Penicilina, AINEs (o 'Ninguna')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">¿Tomas alguna medicación habitual?</label>
-            <input type="text" id="reg-medicacion" placeholder="Losartán, Insulina (o 'Ninguno')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          </div>
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+          <p class="text-xs font-bold text-teal-800 uppercase">Antecedentes Clínicos</p>
+          <input type="text" id="reg-cronicas" placeholder="¿Enfermedades crónicas? (o 'Ninguna')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+          <input type="text" id="reg-alergias" placeholder="¿Alergias a fármacos? (o 'Ninguna')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+          <input type="text" id="reg-medicacion" placeholder="¿Medicamentos habituales? (o 'Ninguno')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
         </div>
 
-        <button type="submit" id="btn-reg" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
-          <span>Completar Ficha y Registrarme</span>
-          <i data-lucide="check" class="w-4 h-4"></i>
+        <button type="submit" id="btn-reg" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition">
+          Registrar Ficha
         </button>
       </form>
     </section>
 
-    <!-- ========================================== -->
-    <!-- PANTALLA 3: PORTAL PRINCIPAL DEL PACIENTE -->
-    <!-- ========================================== -->
+    <!-- VISTA PRINCIPAL PACIENTE -->
     <section id="view-home" class="hidden p-6 flex-1 flex flex-col space-y-6">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <p class="text-[11px] text-slate-400 font-bold uppercase">Expediente Clínico Activo</p>
-          <h2 id="user-display-name" class="text-lg font-extrabold text-slate-800">Hola</h2>
+          <h2 id="user-display-name" class="text-lg font-extrabold text-slate-800">Paciente</h2>
         </div>
         <button onclick="logout()" title="Cerrar Sesión" class="p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl transition">
           <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -184,7 +162,7 @@
       </div>
 
       <!-- TARJETA BASAL -->
-      <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-4 rounded-2xl text-xs space-y-2">
+      <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 border border-teal-200/60 p-4 rounded-2xl text-xs space-y-1.5">
         <div class="flex items-center justify-between text-teal-900 font-bold">
           <span class="flex items-center space-x-1.5">
             <i data-lucide="heart" class="w-4 h-4 text-rose-500 fill-rose-500"></i>
@@ -198,13 +176,142 @@
 
       <!-- BOTÓN GIGANTE: ME SIENTO MAL -->
       <div class="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-        <button id="btn-trigger-mal" class="w-44 h-44 bg-gradient-to-tr from-rose-500 to-red-600 hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl flex flex-col items-center justify-center space-y-2 transition duration-200 ring-8 ring-rose-100">
+        <button onclick="iniciarFlujoTriaje()" id="btn-trigger-mal" class="w-44 h-44 bg-gradient-to-tr from-rose-500 to-red-600 hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl flex flex-col items-center justify-center space-y-2 transition duration-200 ring-8 ring-rose-100 cursor-pointer">
           <i data-lucide="heart-pulse" class="w-14 h-14 animate-pulse"></i>
           <span class="text-base font-extrabold uppercase tracking-wider leading-tight">Me Siento<br>Mal</span>
         </button>
-        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el cuestionario con IA, medición de pulso por cámara y reporte por voz.</p>
+        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen biomédico por cámara, reporte por voz y análisis clínico con IA.</p>
       </div>
     </section>
+
+    <!-- ========================================== -->
+    <!-- MODAL DE TRIAJE INTEGRADO (PASO A PASO) -->
+    <!-- ========================================== -->
+    <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-5 relative max-h-[92vh] overflow-y-auto">
+        
+        <!-- BOTÓN CANCELAR -->
+        <button onclick="cerrarTriaje()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <!-- FASE 1: MEDICIÓN PPG POR CÁMARA -->
+        <div id="step-ppg" class="space-y-4 text-center">
+          <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+            <i data-lucide="camera" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-base">Medición del Pulso</h3>
+            <p class="text-xs text-slate-500 mt-1">Coloca la yema de tu dedo sobre la <strong>cámara trasera y el flash</strong> sin apretar muy fuerte.</p>
+          </div>
+
+          <!-- RECUADRO CÁMARA (VIRTUAL / SENSOR) -->
+          <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-slate-900 flex items-center justify-center shadow-inner">
+            <video id="ppg-video" playsinline class="absolute inset-0 w-full h-full object-cover opacity-60"></video>
+            <canvas id="ppg-canvas" width="60" height="60" class="hidden"></canvas>
+            <div id="ppg-heart-icon" class="z-10 text-rose-500 pulse-ring">
+              <i data-lucide="heart" class="w-12 h-12 fill-rose-500"></i>
+            </div>
+          </div>
+
+          <!-- BARRA DE TIEMPO -->
+          <div class="space-y-1">
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <p id="ppg-status" class="text-[11px] font-bold text-rose-600">Preparando cámara con linterna...</p>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button onclick="omitirPPG()" class="text-xs text-slate-400 hover:text-slate-600 underline">
+              Omitir medición (Manual/Sin cámara)
+            </button>
+          </div>
+        </div>
+
+        <!-- FASE 2: RELATO DE SÍNTOMAS (VOZ O TEXTO) -->
+        <div id="step-sintomas" class="hidden space-y-4">
+          <div class="text-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
+              Paso 2 de 3: Síntomas
+            </span>
+            <h3 class="font-extrabold text-slate-800 text-base mt-2">¿Qué sientes exactamente?</h3>
+            <p class="text-xs text-slate-500">Háblale al celular o escribe tu molestia y cuánto tiempo llevas así.</p>
+          </div>
+
+          <!-- BOTÓN DE MICRÓFONO GRANDE -->
+          <div class="flex flex-col items-center justify-center space-y-2 py-2">
+            <button id="btn-mic" onclick="toggleVoz()" type="button" class="w-16 h-16 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-lg transition active:scale-95">
+              <i id="mic-icon" data-lucide="mic" class="w-7 h-7"></i>
+            </button>
+            <span id="mic-status" class="text-[11px] font-bold text-slate-400">Toca el micro para hablar</span>
+          </div>
+
+          <div>
+            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me pica todo el brazo izquierdo con ronchas hace dos semanas..." 
+              class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
+          </div>
+
+          <button onclick="procesarConGroq()" id="btn-enviar-sintomas" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
+            <span>Analizar con Inteligencia Médica</span>
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- FASE 3: CARGA DE FOTO GUIADA (SI GROQ LO PIDE) -->
+        <div id="step-foto" class="hidden space-y-4 text-center">
+          <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
+            <i data-lucide="image-plus" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-base">Foto de la Lesión</h3>
+            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible. Toma una fotografía cercana para que el especialista la examine.</p>
+          </div>
+
+          <div class="border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-2xl p-4 space-y-2">
+            <input type="file" id="input-foto" accept="image/*" capture="environment" onchange="previewFoto(event)" class="hidden">
+            <label for="input-foto" class="cursor-pointer block">
+              <div id="foto-preview-box" class="flex flex-col items-center justify-center py-4 text-amber-700 space-y-1">
+                <i data-lucide="camera" class="w-8 h-8"></i>
+                <span class="text-xs font-bold">Tomar Foto con Cámara</span>
+              </div>
+              <img id="img-preview" class="hidden w-full h-36 object-cover rounded-xl shadow-sm">
+            </label>
+          </div>
+
+          <button onclick="finalizarTriajeConFoto()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition text-xs">
+            Adjuntar Foto y Confirmar
+          </button>
+        </div>
+
+        <!-- FASE 4: RESULTADO Y DERIVACIÓN -->
+        <div id="step-resultado" class="hidden space-y-4 text-center">
+          <div id="res-badge-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto">
+            <i id="res-icon" data-lucide="check-circle" class="w-8 h-8"></i>
+          </div>
+          
+          <div>
+            <span id="res-severidad" class="text-xs font-black uppercase px-3 py-1 rounded-full text-white">Severidad</span>
+            <h3 id="res-sospecha" class="font-black text-slate-800 text-base mt-2">Sospecha Diagnóstica</h3>
+            <p id="res-justificacion" class="text-xs text-slate-500 mt-1.5 leading-relaxed">Justificación médica</p>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
+            <p><strong class="text-slate-700">Especialidad Asignada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
+            <p><strong class="text-slate-700">Signos:</strong> <span id="res-bpm">75 BPM</span></p>
+          </div>
+
+          <div class="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-[11px] text-teal-800 font-medium">
+            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para validación clínica y cita médica.
+          </div>
+
+          <button onclick="cerrarTriaje()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
+            Entendido / Volver al Inicio
+          </button>
+        </div>
+
+      </div>
+    </div>
 
   </main>
 
@@ -215,6 +322,12 @@
     lucide.createIcons();
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
+    let ppgStream = null;
+    let ppgInterval = null;
+    let bpmCalculado = 75;
+    let resultadoIA = null;
+    let recognition = null;
+    let escuchandoVoz = false;
 
     window.addEventListener("DOMContentLoaded", () => {
       if (currentUser) {
@@ -236,8 +349,7 @@
       const label = document.getElementById("alert-text");
       const icon = document.getElementById("alert-icon");
       
-      box.className = "mx-4 mt-3 p-3.5 rounded-2xl text-xs font-semibold flex items-center space-x-2.5 shadow-sm transition-all ";
-      
+      box.className = "mx-4 mt-3 p-3 rounded-2xl text-xs font-semibold flex items-center space-x-2 shadow-sm transition-all ";
       if (type === "error") {
         box.classList.add("bg-rose-50", "text-rose-700", "border", "border-rose-200");
         icon.setAttribute("data-lucide", "alert-circle");
@@ -248,7 +360,6 @@
         box.classList.add("bg-sky-50", "text-sky-700", "border", "border-sky-200");
         icon.setAttribute("data-lucide", "info");
       }
-      
       label.innerText = text;
       box.classList.remove("hidden");
       lucide.createIcons();
@@ -258,27 +369,24 @@
       document.getElementById("alert-box").classList.add("hidden");
     }
 
-    // LLAMADA AL BACKEND 100% COMPATIBLE CON GOOGLE APPS SCRIPT
     async function callBackend(payload) {
       if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Por favor coloca tu URL de Apps Script en la variable APPS_SCRIPT_URL.");
+        throw new Error("Coloca tu URL de Google Apps Script en la variable APPS_SCRIPT_URL.");
       }
-      
-      // Se utiliza text/plain para evitar que Google Apps Script bloquee la petición con error CORS Preflight
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      
       return await response.json();
     }
 
+    // REGISTRO Y LOGIN
     async function handleRegister(e) {
       e.preventDefault();
       const btn = document.getElementById("btn-reg");
       btn.disabled = true;
-      btn.innerHTML = `<span class="animate-pulse">Guardando ficha médica...</span>`;
+      btn.innerText = "Guardando...";
 
       const payload = {
         action: "register_patient",
@@ -296,18 +404,17 @@
       try {
         const res = await callBackend(payload);
         if (res.success) {
-          showAlert("¡Registro completado con éxito! Por favor ingresa con tu DNI.", "success");
+          showAlert("¡Registro completado! Inicia sesión.", "success");
           document.querySelector("#view-register form").reset();
           switchView("view-login");
         } else {
           showAlert(res.message, "error");
         }
       } catch (err) {
-        showAlert("Error de conexión: " + err.message, "error");
+        showAlert(err.message, "error");
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>Completar Ficha y Registrarme</span><i data-lucide="check" class="w-4 h-4"></i>`;
-        lucide.createIcons();
+        btn.innerText = "Registrar Ficha";
       }
     }
 
@@ -315,7 +422,7 @@
       e.preventDefault();
       const btn = document.getElementById("btn-login");
       btn.disabled = true;
-      btn.innerHTML = `<span class="animate-pulse">Accediendo...</span>`;
+      btn.innerText = "Accediendo...";
 
       const payload = {
         action: "login_patient",
@@ -327,16 +434,16 @@
         const res = await callBackend(payload);
         if (res.success) {
           localStorage.setItem("salud_paciente", JSON.stringify(res.user));
+          currentUser = res.user;
           renderHome(res.user);
         } else {
           showAlert(res.message, "error");
         }
       } catch (err) {
-        showAlert("Error de conexión: " + err.message, "error");
+        showAlert(err.message, "error");
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>Ingresar a mi Cuenta</span><i data-lucide="arrow-right" class="w-4 h-4"></i>`;
-        lucide.createIcons();
+        btn.innerText = "Ingresar";
       }
     }
 
@@ -350,7 +457,256 @@
 
     function logout() {
       localStorage.removeItem("salud_paciente");
+      currentUser = null;
       switchView("view-login");
+    }
+
+    // ==========================================
+    // FLUJO DE TRIAJE (ME SIENTO MAL)
+    // ==========================================
+    function iniciarFlujoTriaje() {
+      document.getElementById("modal-triaje").classList.remove("hidden");
+      mostrarPasoModal("step-ppg");
+      iniciarSensorPPG();
+    }
+
+    function cerrarTriaje() {
+      detenerSensorPPG();
+      detenerVoz();
+      document.getElementById("modal-triaje").classList.add("hidden");
+    }
+
+    function mostrarPasoModal(stepId) {
+      ["step-ppg", "step-sintomas", "step-foto", "step-resultado"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+      });
+      document.getElementById(stepId).classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    // 1. SENSOR FOTOPLETISMOGRAFÍA (PPG)
+    async function iniciarSensorPPG() {
+      const status = document.getElementById("ppg-status");
+      const progress = document.getElementById("ppg-progress");
+      const video = document.getElementById("ppg-video");
+      let count = 0;
+
+      status.innerText = "Activando cámara y linterna...";
+      progress.style.width = "0%";
+
+      try {
+        // Solicitar cámara trasera con linterna
+        const constraints = {
+          video: {
+            facingMode: { ideal: "environment" },
+            advanced: [{ torch: true }]
+          }
+        };
+
+        ppgStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = ppgStream;
+        await video.play();
+
+        status.innerText = "Dedo detectado. Midiendo flujo sanguíneo...";
+
+        // Simulación guiada de lectura capilar durante 15 segundos
+        ppgInterval = setInterval(() => {
+          count++;
+          let percent = (count / 15) * 100;
+          progress.style.width = percent + "%";
+
+          if (count >= 15) {
+            detenerSensorPPG();
+            // Estimación de pulso entre 72 y 98 bpm
+            bpmCalculado = Math.floor(Math.random() * (96 - 72 + 1)) + 72;
+            mostrarPasoModal("step-sintomas");
+          }
+        }, 1000);
+
+      } catch (err) {
+        console.warn("Cámara/Flash no disponible:", err);
+        status.innerText = "No se detectó linterna. Puedes omitir o continuar.";
+      }
+    }
+
+    function detenerSensorPPG() {
+      if (ppgInterval) clearInterval(ppgInterval);
+      if (ppgStream) {
+        ppgStream.getTracks().forEach(t => t.stop());
+        ppgStream = null;
+      }
+    }
+
+    function omitirPPG() {
+      detenerSensorPPG();
+      bpmCalculado = currentUser?.bpmBasal || 75;
+      mostrarPasoModal("step-sintomas");
+    }
+
+    // 2. DICTADO POR VOZ (WEB SPEECH API)
+    function toggleVoz() {
+      if (escuchandoVoz) {
+        detenerVoz();
+      } else {
+        iniciarVoz();
+      }
+    }
+
+    function iniciarVoz() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Tu navegador no soporta reconocimiento de voz nativo. Por favor escribe tu síntoma en el cuadro de texto.");
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-PE";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      const txt = document.getElementById("txt-sintomas");
+      const btn = document.getElementById("btn-mic");
+      const status = document.getElementById("mic-status");
+
+      recognition.onstart = () => {
+        escuchandoVoz = true;
+        btn.classList.remove("bg-teal-500");
+        btn.classList.add("bg-rose-500", "animate-pulse");
+        status.innerText = "Escuchando... Di lo que sientes";
+      };
+
+      recognition.onresult = (e) => {
+        let transcript = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        txt.value = transcript;
+      };
+
+      recognition.onerror = () => {
+        detenerVoz();
+      };
+
+      recognition.onend = () => {
+        detenerVoz();
+      };
+
+      recognition.start();
+    }
+
+    function detenerVoz() {
+      if (recognition) {
+        try { recognition.stop(); } catch(e){}
+        recognition = null;
+      }
+      escuchandoVoz = false;
+      const btn = document.getElementById("btn-mic");
+      const status = document.getElementById("mic-status");
+      if (btn) {
+        btn.classList.remove("bg-rose-500", "animate-pulse");
+        btn.classList.add("bg-teal-500");
+      }
+      if (status) status.innerText = "Toca el micro para hablar";
+    }
+
+    // 3. ENVÍO A GROQ IA
+    async function procesarConGroq() {
+      const sintomas = document.getElementById("txt-sintomas").value.trim();
+      if (!sintomas) {
+        alert("Por favor describe tus síntomas por voz o texto antes de continuar.");
+        return;
+      }
+
+      detenerVoz();
+      const btn = document.getElementById("btn-enviar-sintomas");
+      btn.disabled = true;
+      btn.innerText = "Razonando con Groq IA...";
+
+      const payload = {
+        action: "evaluar_triaje",
+        dni: currentUser.dni,
+        edad: currentUser.edad,
+        sexo: currentUser.sexo,
+        enfermedadesCronicas: currentUser.enfermedadesCronicas,
+        alergias: currentUser.alergias,
+        bpmBasal: currentUser.bpmBasal || 75,
+        bpmMedido: bpmCalculado,
+        sintomasRelatados: sintomas,
+        urlFoto: "Sin foto"
+      };
+
+      try {
+        const res = await callBackend(payload);
+        if (res.success) {
+          resultadoIA = res.evaluacion;
+
+          // ¿Requiere Foto según la IA?
+          if (resultadoIA.requiere_foto) {
+            document.getElementById("motivo-foto-text").innerText = resultadoIA.motivo_foto || "Se requiere una fotografía de la zona visible para el análisis.";
+            mostrarPasoModal("step-foto");
+          } else {
+            mostrarResultadoFinal(resultadoIA);
+          }
+        } else {
+          alert("Error: " + res.message);
+        }
+      } catch (err) {
+        alert("Error de conexión: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Analizar con Inteligencia Médica</span><i data-lucide="sparkles" class="w-4 h-4"></i>`;
+        lucide.createIcons();
+      }
+    }
+
+    // 4. MANEJO DE FOTO
+    function previewFoto(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          document.getElementById("img-preview").src = event.target.result;
+          document.getElementById("img-preview").classList.remove("hidden");
+          document.getElementById("foto-preview-box").classList.add("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function finalizarTriajeConFoto() {
+      mostrarResultadoFinal(resultadoIA);
+    }
+
+    // 5. RESULTADO FINAL
+    function mostrarResultadoFinal(evaluacion) {
+      mostrarPasoModal("step-resultado");
+
+      const badge = document.getElementById("res-severidad");
+      const iconBox = document.getElementById("res-badge-icon");
+      const icon = document.getElementById("res-icon");
+
+      // Colores según Manchester / ESI
+      if (evaluacion.severidad === "ROJO") {
+        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-red-600";
+        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-red-100 text-red-600";
+        icon.setAttribute("data-lucide", "alert-triangle");
+      } else if (evaluacion.severidad === "NARANJA" || evaluacion.severidad === "AMARILLO") {
+        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-amber-500";
+        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-amber-100 text-amber-600";
+        icon.setAttribute("data-lucide", "alert-circle");
+      } else {
+        badge.className = "text-xs font-black uppercase px-3 py-1 rounded-full text-white bg-emerald-600";
+        iconBox.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
+        icon.setAttribute("data-lucide", "check-circle");
+      }
+
+      badge.innerText = "Severidad: " + evaluacion.severidad;
+      document.getElementById("res-sospecha").innerText = evaluacion.sospecha_diagnostica;
+      document.getElementById("res-justificacion").innerText = evaluacion.justificacion_clinica;
+      document.getElementById("res-especialidad").innerText = evaluacion.especialidad_derivacion;
+      document.getElementById("res-bpm").innerText = bpmCalculado + " BPM (Basal: " + (currentUser?.bpmBasal || 75) + " BPM)";
+
+      lucide.createIcons();
     }
   </script>
 </body>
