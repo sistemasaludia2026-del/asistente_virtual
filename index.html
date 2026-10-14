@@ -284,7 +284,7 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE VOZ -->
+        <!-- FASE 2: RELATO DE VOZ (TU CÓDIGO FUNCIONAL) -->
         <div id="step-sintomas" class="space-y-4 text-center">
           <div>
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
@@ -294,9 +294,7 @@
             <p class="text-[11px] text-slate-500">Toca el micrófono una vez para hablar y otra vez para terminar. Puedes hacer pausas, no se cortará.</p>
           </div>
 
-          <!-- MÓDULO VISUAL DE GRABACIÓN -->
           <div class="flex flex-col items-center justify-center space-y-2 py-2">
-            
             <div id="audio-visual-box" class="hidden flex flex-col items-center space-y-1">
               <div class="flex items-center space-x-1.5 h-6">
                 <span class="w-1.5 bg-rose-500 rounded-full wave-bar" style="animation-delay: 0.1s"></span>
@@ -310,7 +308,6 @@
               </span>
             </div>
 
-            <!-- BOTÓN PRINCIPAL -->
             <button id="btn-mic-action" onclick="toggleMicrofono()" type="button"
               class="w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer">
               <i data-lucide="mic" class="w-7 h-7"></i>
@@ -377,7 +374,7 @@
           </button>
         </div>
 
-        <!-- FASE 5: RESULTADO FINAL -->
+        <!-- FASE 5: RESULTADO FINAL (ORIENTACIÓN CLARA Y CUIDADOS AL PACIENTE) -->
         <div id="step-resultado" class="hidden space-y-3.5 text-center">
           <div id="res-badge-icon" class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto">
             <i id="res-icon" data-lucide="check-circle" class="w-6 h-6"></i>
@@ -389,8 +386,25 @@
             <p id="res-justificacion" class="text-xs text-slate-500 mt-1 leading-relaxed">Justificación médica</p>
           </div>
 
+          <!-- TARJETA ORIENTACIÓN CLARA Y CUIDADOS AL PACIENTE -->
+          <div class="bg-gradient-to-br from-teal-50/90 to-slate-50 border border-teal-200 rounded-2xl p-3.5 text-left space-y-2 shadow-sm">
+            <div class="flex items-center justify-between border-b border-teal-100 pb-2">
+              <span class="font-bold text-teal-900 text-xs flex items-center space-x-1.5">
+                <i data-lucide="info" class="w-4 h-4 text-teal-600"></i>
+                <span>Orientación Médica & Cuidados</span>
+              </span>
+              <button onclick="escucharOrientacion()" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-[10px] flex items-center space-x-1 transition active:scale-95 shadow-sm">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                <span>Escuchar</span>
+              </button>
+            </div>
+            <p id="res-orientacion-paciente" class="text-slate-700 text-xs leading-relaxed">
+              Cargando orientación para el paciente...
+            </p>
+          </div>
+
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
-            <p><strong class="text-slate-700">Especialidad Asignada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
+            <p><strong class="text-slate-700">Especialidad Recomendada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
             <p><strong class="text-slate-700">Pulso Registrado:</strong> <span id="res-bpm">75 BPM</span></p>
           </div>
 
@@ -431,12 +445,12 @@
     let ultimoPicoTiempo = 0;
     let lenteCompletamenteCubierto = false;
 
-    // ---- MOTOR DE VOZ ----
+    // MOTOR DE VOZ TUYO FUNCIONAL
     let recognition = null;
-    let microfonoActivo = false;   // el usuario quiere que siga escuchando
-    let textoBaseCuadro = "";      // lo que ya estaba escrito antes de hablar
-    let textoConfirmado = "";      // texto de sesiones de reconocimiento ya cerradas
-    let textoSesion = "";          // texto final de la sesión actual
+    let microfonoActivo = false;
+    let textoBaseCuadro = "";
+    let textoConfirmado = "";
+    let textoSesion = "";
     let reinicioTimer = null;
     let cierreTimer = null;
 
@@ -450,11 +464,17 @@
       const u = new SpeechSynthesisUtterance(texto);
       u.lang = "es-PE";
       u.rate = 0.92;
-      u.pitch = 1.1;
+      u.pitch = 1.05;
       const voces = window.speechSynthesis.getVoices();
       const vf = voces.find(v => v.lang.startsWith("es") && (v.name.includes("female") || v.name.includes("mujer") || v.name.includes("paulina") || v.name.includes("monica")));
       if (vf) u.voice = vf;
       window.speechSynthesis.speak(u);
+    }
+
+    function escucharOrientacion() {
+      if (resultadoIA && resultadoIA.orientacion_paciente) {
+        hablarAsistente(resultadoIA.orientacion_paciente);
+      }
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -753,7 +773,6 @@
             const avgG = gSum / px;
             const avgB = bSum / px;
 
-            // Validación capilar
             const esRojoUniforme = avgR > 95 && (avgR > avgG * 1.5) && (avgR > avgB * 1.8);
 
             if (esRojoUniforme) {
@@ -871,16 +890,7 @@
     }
 
     // =========================================================================
-    // MICRÓFONO (Web Speech API) - VERSIÓN CORREGIDA
-    //
-    // Reglas de diseño:
-    //  1) El texto del cuadro SIEMPRE se reconstruye desde cero con
-    //     base + confirmado + sesión actual (nunca se "agrega" al cuadro),
-    //     así es imposible que se repita.
-    //  2) Al tocar "terminar" se llama a stop() y se ESPERA a onend: el último
-    //     resultado llega justo antes de onend, no antes.
-    //  3) Si el navegador corta por silencio, se reinicia solo (con pausa)
-    //     y lo ya dicho se conserva en textoConfirmado.
+    // TU CÓDIGO DE VOZ FUNCIONAL
     // =========================================================================
     function setIconoMic(nombre) {
       const btn = document.getElementById("btn-mic-action");
@@ -930,7 +940,6 @@
         return;
       }
 
-      // Que el asistente no hable encima del micrófono
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
       clearTimeout(reinicioTimer);
@@ -955,7 +964,6 @@
       recognition = rec;
 
       rec.onresult = (event) => {
-        // Reconstruimos TODO desde event.results (índice 0) en cada evento.
         const finales = [];
         let interim = "";
 
@@ -964,7 +972,6 @@
           if (!t) continue;
 
           if (event.results[i].isFinal) {
-            // Evita el bug de Android donde un resultado repite al anterior acumulado
             const ultimo = finales[finales.length - 1];
             if (ultimo && t.toLowerCase().startsWith(ultimo.toLowerCase())) {
               finales[finales.length - 1] = t;
@@ -976,7 +983,6 @@
           }
         }
 
-        // Si el interim repite el último final, se descarta la parte repetida
         const ult = finales[finales.length - 1];
         if (ult && interim.toLowerCase().startsWith(ult.toLowerCase())) {
           interim = interim.slice(ult.length).trim();
@@ -990,25 +996,19 @@
         console.warn("Speech error:", e.error);
         if (e.error === "not-allowed" || e.error === "service-not-allowed") {
           microfonoActivo = false;
-          alert("No hay permiso para usar el micrófono. Actívalo en los permisos del navegador (ícono del candado) y vuelve a intentar.");
-        } else if (e.error === "audio-capture") {
-          microfonoActivo = false;
-          alert("No se detectó ningún micrófono en tu dispositivo.");
+          alert("No hay permiso para usar el micrófono. Actívalo en los permisos del navegador.");
         } else if (e.error === "network") {
           microfonoActivo = false;
-          alert("El dictado por voz necesita internet. Revisa tu conexión o escribe tus síntomas.");
+          alert("El dictado por voz necesita internet.");
         }
-        // "no-speech" y "aborted" son normales: onend se encarga de reiniciar
       };
 
       rec.onend = () => {
-        // Guardamos lo dicho en esta sesión y la dejamos atrás
         textoConfirmado = [textoConfirmado, textoSesion].filter(Boolean).join(" ").trim();
         textoSesion = "";
         actualizarTextareaVoz("");
 
         if (microfonoActivo) {
-          // El navegador cortó solo (silencio): reiniciar con una pausa corta
           reinicioTimer = setTimeout(() => {
             if (microfonoActivo) {
               try { arrancarReconocedor(); } catch (err) { finalizarMicrofonoUI(); }
@@ -1028,7 +1028,6 @@
       }
     }
 
-    // El usuario toca "terminar": pedimos stop() y ESPERAMOS a onend
     function terminarMicrofono() {
       microfonoActivo = false;
       clearTimeout(reinicioTimer);
@@ -1039,7 +1038,6 @@
 
       if (recognition) {
         try { recognition.stop(); } catch (e) {}
-        // Seguro por si onend nunca llega
         cierreTimer = setTimeout(finalizarMicrofonoUI, 2000);
       } else {
         finalizarMicrofonoUI();
@@ -1059,7 +1057,6 @@
       );
     }
 
-    // Apagado inmediato (al cerrar el modal, reiniciar flujo, etc.)
     function detenerMicrofonoForzado() {
       microfonoActivo = false;
       clearTimeout(reinicioTimer);
@@ -1194,7 +1191,7 @@
 
       try {
         const res = await callBackend(payload);
-        if (res.success) {
+        if (res.success && res.evaluacion) {
           resultadoIA = res.evaluacion;
           cargarHistorial();
 
@@ -1206,7 +1203,7 @@
             mostrarResultadoFinal(resultadoIA);
           }
         } else {
-          alert("Error: " + res.message);
+          alert("Error: " + (res.message || "No se pudo obtener el informe clínico."));
         }
       } catch (err) {
         alert("Error de conexión: " + err.message);
@@ -1234,6 +1231,7 @@
       mostrarResultadoFinal(resultadoIA);
     }
 
+    // RESULTADO FINAL CON INFORME CLÍNICO Y ORIENTACIÓN CLARA
     function mostrarResultadoFinal(evaluacion) {
       mostrarPasoModal("step-resultado");
 
@@ -1254,7 +1252,6 @@
         iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
         iconName = "check-circle";
       }
-      // Se recrea el <i> para que lucide pueda volver a dibujar el ícono correcto
       iconBox.innerHTML = `<i id="res-icon" data-lucide="${iconName}" class="w-6 h-6"></i>`;
 
       badge.innerText = "Severidad: " + evaluacion.severidad;
@@ -1262,6 +1259,9 @@
       document.getElementById("res-justificacion").innerText = evaluacion.justificacion_clinica;
       document.getElementById("res-especialidad").innerText = evaluacion.especialidad_derivacion;
       document.getElementById("res-bpm").innerText = bpmCalculado + " BPM (Basal: " + (currentUser?.bpmBasal || 75) + " BPM)";
+
+      // Colocar la orientación clara y empática
+      document.getElementById("res-orientacion-paciente").innerText = evaluacion.orientacion_paciente || "Guarda reposo y mantén hidratación adecuada hasta tu evaluación médica.";
 
       hablarAsistente(`Tu evaluación ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido a enfermería.`);
       lucide.createIcons();
