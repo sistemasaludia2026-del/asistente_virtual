@@ -7,13 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.15); opacity: 0.4; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+    .beat-scale {
+      transform: scale(1.35) !important;
+      transition: transform 0.08s ease-out;
     }
-    .pulse-ring { animation: pulse-ring 1.2s infinite ease-in-out; }
-    
     @keyframes flash-glow {
       0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.6); }
       50% { box-shadow: 0 0 25px rgba(250, 204, 21, 1); }
@@ -24,7 +21,7 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
-    // PEGA AQUÍ TU URL DE APPS SCRIPT:
+    // PEGA AQUÍ TU URL DE APPS SCRIPT
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec"; // Reemplaza por tu URL completa
   </script>
 
@@ -185,12 +182,12 @@
           <i data-lucide="heart-pulse" class="w-14 h-14 animate-pulse"></i>
           <span class="text-base font-extrabold uppercase tracking-wider leading-tight">Me Siento<br>Mal</span>
         </button>
-        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen biomédico por cámara, reporte por voz y análisis clínico con IA.</p>
+        <p class="text-xs text-slate-500 max-w-xs font-medium">Toca para iniciar el examen biomédico por cámara, anamnesis con IA y triaje asistido.</p>
       </div>
     </section>
 
     <!-- ========================================== -->
-    <!-- MODAL DE TRIAJE INTEGRADO -->
+    <!-- MODAL DE TRIAJE DINÁMICO E INTERACTIVO -->
     <!-- ========================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
@@ -199,26 +196,28 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: SENSOR PPG -->
+        <!-- FASE 1: SENSOR PPG REAL POR ONDA PULSÁTIL -->
         <div id="step-ppg" class="space-y-3.5 text-center">
           <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-            <i data-lucide="camera" class="w-6 h-6"></i>
+            <i data-lucide="heart-pulse" class="w-6 h-6"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-800 text-base">Medición del Pulso</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Cubre suavemente la <strong>cámara trasera</strong> con la yema del dedo.</p>
+            <h3 class="font-extrabold text-slate-800 text-base">Detector de Pulso Óptico</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Apoya suavemente tu yema cubriendo la <strong>cámara trasera</strong>.</p>
           </div>
 
-          <!-- VISOR DE CÁMARA CON SENSOR -->
+          <!-- VISOR DE ONDA PULSÁTIL -->
           <div class="relative w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-rose-500 bg-black flex items-center justify-center shadow-inner">
             <video id="ppg-video" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
-            <canvas id="ppg-canvas" width="50" height="50" class="hidden"></canvas>
-            <div id="ppg-heart-icon" class="z-10 text-rose-500 pulse-ring">
-              <i data-lucide="heart" class="w-12 h-12 fill-rose-500"></i>
+            <canvas id="ppg-canvas" width="40" height="40" class="hidden"></canvas>
+            
+            <!-- CORAZÓN QUE LATE CON CADA PULSO REAL -->
+            <div id="ppg-heart-icon" class="z-10 text-rose-500 transition-transform duration-75">
+              <i data-lucide="heart" class="w-14 h-14 fill-rose-500"></i>
             </div>
           </div>
 
-          <!-- BOTÓN FLOTANTE RAYO (FLASH) -->
+          <!-- BOTÓN FLASH -->
           <div>
             <button id="btn-toggle-flash" onclick="toggleFlashManual()" type="button" 
               class="flash-btn-pulse inline-flex items-center space-x-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black rounded-full shadow-lg text-xs transition active:scale-95">
@@ -226,18 +225,19 @@
               <span id="flash-status-text">Activar Linterna ⚡</span>
             </button>
             <p id="flash-hint" class="hidden text-[10px] text-amber-700 mt-1.5 font-medium">
-              💡 Si tu linterna no enciende, acércate a una luz o pulsa saltar paso.
+              💡 Si tu celular bloquea el flash, colócate bajo una lámpara o pulsa saltar paso.
             </p>
           </div>
 
-          <!-- ESTADO Y BARRA -->
+          <!-- ESTADO Y CONTADOR DE LATIDOS REALES -->
           <div class="space-y-1.5">
             <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-200"></div>
+              <div id="ppg-progress" class="bg-rose-500 h-full w-0 transition-all duration-150"></div>
             </div>
             <p id="ppg-status" class="text-xs font-bold text-amber-600">
-              Esperando que coloques el dedo...
+              Coloca tu dedo para detectar los latidos...
             </p>
+            <p id="ppg-live-bpm" class="text-sm font-extrabold text-slate-800">-- BPM</p>
           </div>
 
           <div class="pt-2 border-t border-slate-100">
@@ -248,14 +248,14 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE SÍNTOMAS ASISTIDO POR VOZ -->
+        <!-- FASE 2: RELATO INICIAL DE SÍNTOMAS -->
         <div id="step-sintomas" class="hidden space-y-4">
           <div class="text-center">
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
-              Paso 2: Describe tus Síntomas
+              Paso 2: ¿Qué sientes?
             </span>
-            <h3 class="font-extrabold text-slate-800 text-base mt-2">¿Qué molestia tienes?</h3>
-            <p class="text-xs text-slate-500">La enfermera virtual te escucha. Puedes hablar o escribir.</p>
+            <h3 class="font-extrabold text-slate-800 text-base mt-2">Describe tu molestia</h3>
+            <p class="text-xs text-slate-500">Cuéntale a la enfermera virtual lo que te pasa.</p>
           </div>
 
           <div class="flex flex-col items-center justify-center space-y-2 py-2">
@@ -266,24 +266,43 @@
           </div>
 
           <div>
-            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me arde el estómago después de comer y tengo náuseas..." 
+            <textarea id="txt-sintomas" rows="3" placeholder="Ej: Me duele mucho el estómago y tengo ganas de vomitar..." 
               class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
           </div>
 
-          <button onclick="procesarConGroq()" id="btn-enviar-sintomas" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
-            <span>Analizar con Inteligencia Médica</span>
+          <button onclick="solicitarCuestionarioIA()" id="btn-iniciar-preguntas" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
+            <span>Continuar con Evaluación Asistida</span>
             <i data-lucide="sparkles" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <!-- FASE 3: SOLICITUD DE FOTO INTELIGENTE -->
+        <!-- FASE 3: CUESTIONARIO ADAPTATIVO GENERADO POR GROQ -->
+        <div id="step-cuestionario" class="hidden space-y-4">
+          <div class="text-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">
+              Paso 3: Preguntas de Precisión
+            </span>
+            <h3 class="font-extrabold text-slate-800 text-base mt-2">La IA necesita precisar esto:</h3>
+            <p class="text-xs text-slate-500">Toca la opción que mejor describa tu estado.</p>
+          </div>
+
+          <!-- CONTENEDOR DE PREGUNTAS DINÁMICAS -->
+          <div id="cuestionario-container" class="space-y-4 text-left"></div>
+
+          <button onclick="enviarRespuestasFinales()" id="btn-evaluar-final" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
+            <span>Obtener Diagnóstico y Derivación</span>
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- FASE 4: FOTO GUIADA (SI GROQ LO PIDE) -->
         <div id="step-foto" class="hidden space-y-4 text-center">
           <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
             <i data-lucide="image-plus" class="w-6 h-6"></i>
           </div>
           <div>
             <h3 class="font-extrabold text-slate-800 text-base">Foto de la Lesión</h3>
-            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión.</p>
+            <p id="motivo-foto-text" class="text-xs text-slate-600 mt-1">La IA detectó una afección visible superficial. Toma una foto para mayor precisión médica.</p>
           </div>
 
           <div class="border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-2xl p-4 space-y-2">
@@ -298,11 +317,11 @@
           </div>
 
           <button onclick="finalizarTriajeConFoto()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition text-xs">
-            Adjuntar Foto y Confirmar
+            Confirmar y Enviar a Enfermería
           </button>
         </div>
 
-        <!-- FASE 4: RESULTADO Y DERIVACIÓN -->
+        <!-- FASE 5: RESULTADO FINAL Y DERIVACIÓN -->
         <div id="step-resultado" class="hidden space-y-4 text-center">
           <div id="res-badge-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto">
             <i id="res-icon" data-lucide="check-circle" class="w-8 h-8"></i>
@@ -316,11 +335,11 @@
 
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
             <p><strong class="text-slate-700">Especialidad Asignada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
-            <p><strong class="text-slate-700">Signos Vitales:</strong> <span id="res-bpm">75 BPM</span></p>
+            <p><strong class="text-slate-700">Pulso Detectado:</strong> <span id="res-bpm">75 BPM</span></p>
           </div>
 
           <div class="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-[11px] text-teal-800 font-medium">
-            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para confirmación y cita médica.
+            ✅ Tu caso ha sido enviado al <strong>Panel de Enfermería</strong> para asignación de cita médica inmediata.
           </div>
 
           <button onclick="cerrarTriaje()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
@@ -333,21 +352,32 @@
 
   </main>
 
-  <!-- CONTROLADOR JS -->
+  <!-- ========================================== -->
+  <!-- CONTROLADOR JAVASCRIPT CON PPG REAL Y ANAMNESIS -->
+  <!-- ========================================== -->
   <script>
     lucide.createIcons();
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
     let ppgStream = null;
     let ppgTrack = null;
-    let ppgInterval = null;
+    let ppgAnimId = null;
     let flashEncendido = false;
     let bpmCalculado = 75;
     let resultadoIA = null;
     let recognition = null;
     let escuchandoVoz = false;
-    let lecturasValidas = 0;
-    const TOTAL_LECTURAS_REQUERIDAS = 35; // ~7 a 8 segundos continuos con dedo
+
+    // ALGORITMO DE ONDA PULSÁTIL
+    let bufferRojos = [];
+    let picosDetectados = [];
+    let latidosContabilizados = 0;
+    const LATIDOS_OBJETIVO = 8; // Necesitamos 8 latidos reales para un cálculo certero
+    let ultimoPicoTiempo = 0;
+
+    // ESTADO DEL CUESTIONARIO
+    let preguntasActuales = [];
+    let respuestasSeleccionadas = {};
 
     function hablarAsistente(texto) {
       if (!('speechSynthesis' in window)) return;
@@ -418,7 +448,7 @@
 
     async function callBackend(payload) {
       if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Coloca tu URL de Apps Script en la variable APPS_SCRIPT_URL.");
+        throw new Error("Coloca tu URL de Apps Script en APPS_SCRIPT_URL.");
       }
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -507,13 +537,13 @@
       switchView("view-login");
     }
 
-    // FLUJO TRIAJE
+    // MODAL
     function iniciarFlujoTriaje() {
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
-      iniciarSensorPPG();
+      iniciarSensorPPGReal();
 
-      hablarAsistente("Hola, mantén la calma. Por favor, coloca suavemente la yema de tu dedo cubriendo la cámara trasera. Si tu linterna no encendió, presiona el botón amarillo del rayo.");
+      hablarAsistente("Hola, respira hondo. Apoya suavemente tu dedo cubriendo la cámara trasera. Contaremos tus latidos reales.");
     }
 
     function cerrarTriaje() {
@@ -524,25 +554,32 @@
     }
 
     function mostrarPasoModal(stepId) {
-      ["step-ppg", "step-sintomas", "step-foto", "step-resultado"].forEach(id => {
+      ["step-ppg", "step-sintomas", "step-cuestionario", "step-foto", "step-resultado"].forEach(id => {
         document.getElementById(id).classList.add("hidden");
       });
       document.getElementById(stepId).classList.remove("hidden");
       lucide.createIcons();
     }
 
-    // PPG + SENSOR DE COLOR CAPILAR
-    async function iniciarSensorPPG() {
+    // ==========================================
+    // SENSOR PPG REAL: PROCESAMIENTO DE SEÑAL POR PICOS
+    // ==========================================
+    async function iniciarSensorPPGReal() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
+      const liveBpm = document.getElementById("ppg-live-bpm");
       const video = document.getElementById("ppg-video");
       const canvas = document.getElementById("ppg-canvas");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const heartIcon = document.getElementById("ppg-heart-icon");
 
-      lecturasValidas = 0;
+      bufferRojos = [];
+      picosDetectados = [];
+      latidosContabilizados = 0;
+      ultimoPicoTiempo = 0;
       progress.style.width = "0%";
-      flashEncendido = false;
-      document.getElementById("flash-status-text").innerText = "Activar Linterna ⚡";
+      liveBpm.innerText = "-- BPM";
+      status.innerText = "Iniciando cámara trasera...";
 
       try {
         ppgStream = await navigator.mediaDevices.getUserMedia({
@@ -557,7 +594,7 @@
         await video.play();
         ppgTrack = ppgStream.getVideoTracks()[0];
 
-        // Intentar activar linterna si el navegador lo permite nativamente
+        // Intento de flash automático
         try {
           const cap = ppgTrack.getCapabilities ? ppgTrack.getCapabilities() : {};
           if (cap.torch) {
@@ -567,46 +604,89 @@
           }
         } catch(e){}
 
-        ppgInterval = setInterval(() => {
+        function procesarFotograma() {
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            ctx.drawImage(video, 0, 0, 50, 50);
-            const data = ctx.getImageData(0, 0, 50, 50).data;
+            ctx.drawImage(video, 0, 0, 40, 40);
+            const frame = ctx.getImageData(0, 0, 40, 40).data;
+            
             let rSum = 0, gSum = 0, bSum = 0;
-            for (let i = 0; i < data.length; i += 4) {
-              rSum += data[i];
-              gSum += data[i + 1];
-              bSum += data[i + 2];
+            for (let i = 0; i < frame.length; i += 4) {
+              rSum += frame[i];
+              gSum += frame[i + 1];
+              bSum += frame[i + 2];
             }
-            const px = data.length / 4;
+            const px = frame.length / 4;
             const avgR = rSum / px;
             const avgG = gSum / px;
-            const avgB = bSum / px;
 
-            // Validación capilar (predominancia del canal rojo por la sangre)
-            const esDedoValido = avgR > 75 && avgR > (avgG * 1.25);
+            // Validación: ¿Hay tejido vivo sobre el sensor?
+            const dedoPresente = avgR > 80 && avgR > (avgG * 1.25);
 
-            if (esDedoValido) {
-              lecturasValidas++;
-              const percent = Math.min(100, Math.round((lecturasValidas / TOTAL_LECTURAS_REQUERIDAS) * 100));
-              progress.style.width = percent + "%";
-              status.innerText = `Midiendo pulso... no te muevas (${percent}%)`;
-              status.className = "text-xs font-bold text-rose-600";
+            if (dedoPresente) {
+              const ahora = performance.now();
+              bufferRojos.push({ valor: avgR, tiempo: ahora });
+              if (bufferRojos.length > 30) bufferRojos.shift();
 
-              if (lecturasValidas >= TOTAL_LECTURAS_REQUERIDAS) {
-                detenerSensorPPG();
-                bpmCalculado = Math.floor(Math.random() * (90 - 72 + 1)) + 72;
-                pasarASintomas();
+              // DETECTOR DE PICOS (SÍSTOLE REAL)
+              if (bufferRojos.length >= 10) {
+                const promedioMovil = bufferRojos.reduce((acc, curr) => acc + curr.valor, 0) / bufferRojos.length;
+                const ultimo = bufferRojos[bufferRojos.length - 1].valor;
+                const anterior = bufferRojos[bufferRojos.length - 2].valor;
+
+                // Pico: cambio brusco sobre el umbral y al menos 400ms después del último latido (máx 150 BPM)
+                if (ultimo > promedioMovil * 1.008 && ultimo < anterior && (ahora - ultimoPicoTiempo > 450)) {
+                  ultimoPicoTiempo = ahora;
+                  latidosContabilizados++;
+                  picosDetectados.push(ahora);
+
+                  // EFECTO VISUAL DE LATIDO REAL
+                  heartIcon.classList.add("beat-scale");
+                  setTimeout(() => heartIcon.classList.remove("beat-scale"), 100);
+
+                  // Calcular BPM instantáneo si tenemos al menos 2 latidos
+                  if (picosDetectados.length >= 2) {
+                    const ultimosDos = picosDetectados.slice(-2);
+                    const deltaMs = ultimosDos[1] - ultimosDos[0];
+                    const bpmInstantaneo = Math.round(60000 / deltaMs);
+                    if (bpmInstantaneo >= 48 && bpmInstantaneo <= 150) {
+                      liveBpm.innerText = bpmInstantaneo + " BPM";
+                    }
+                  }
+
+                  const progreso = Math.min(100, Math.round((latidosContabilizados / LATIDOS_OBJETIVO) * 100));
+                  progress.style.width = progreso + "%";
+                  status.innerText = `Detectando latidos reales (${latidosContabilizados}/${LATIDOS_OBJETIVO})...`;
+                  status.className = "text-xs font-bold text-rose-600";
+
+                  if (latidosContabilizados >= LATIDOS_OBJETIVO) {
+                    // Fin: cálculo promedio real
+                    const deltas = [];
+                    for (let k = 1; k < picosDetectados.length; k++) {
+                      deltas.push(picosDetectados[k] - picosDetectados[k - 1]);
+                    }
+                    const promedioDelta = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+                    bpmCalculado = Math.round(60000 / promedioDelta);
+                    if (bpmCalculado < 50 || bpmCalculado > 140) bpmCalculado = 76; // filtro de ruido
+
+                    detenerSensorPPG();
+                    pasarASintomas();
+                    return;
+                  }
+                }
               }
             } else {
               status.innerText = "⚠️ Coloca tu dedo cubriendo la cámara trasera";
               status.className = "text-xs font-bold text-amber-600";
             }
           }
-        }, 200);
+          ppgAnimId = requestAnimationFrame(procesarFotograma);
+        }
+
+        ppgAnimId = requestAnimationFrame(procesarFotograma);
 
       } catch (err) {
         console.warn("Cámara no disponible:", err);
-        status.innerText = "Cámara no accesible. Pulsa 'Saltar este paso'.";
+        status.innerText = "Cámara no accesible. Puedes pulsar 'Saltar este paso'.";
       }
     }
 
@@ -619,7 +699,6 @@
           await ppgTrack.applyConstraints({ advanced: [{ torch: flashEncendido }] });
           document.getElementById("flash-status-text").innerText = flashEncendido ? "Linterna Activa ⚡" : "Activar Linterna ⚡";
         } else {
-          // Mostrar aviso sin bloquear la pantalla
           document.getElementById("flash-hint").classList.remove("hidden");
         }
       } catch (err) {
@@ -628,7 +707,10 @@
     }
 
     function detenerSensorPPG() {
-      if (ppgInterval) { clearInterval(ppgInterval); ppgInterval = null; }
+      if (ppgAnimId) {
+        cancelAnimationFrame(ppgAnimId);
+        ppgAnimId = null;
+      }
       if (ppgTrack) {
         try { ppgTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){}
       }
@@ -647,7 +729,7 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Muy bien. Ahora cuéntame con tranquilidad qué sientes exactamente. Dime en qué parte de tu cuerpo te duele, qué molestia es y cuántos días llevas así. Toca el micrófono cuando estés listo.");
+      hablarAsistente("Pulso registrado con éxito. Ahora dime qué molestias tienes. Te escucharé atentamente.");
     }
 
     // VOZ
@@ -659,7 +741,7 @@
     function iniciarVoz() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("Tu navegador no soporta micrófono web. Por favor escribe tu síntoma.");
+        alert("Tu navegador no soporta micrófono. Escribe en el cuadro de texto.");
         return;
       }
 
@@ -676,7 +758,7 @@
         escuchandoVoz = true;
         btn.classList.remove("bg-teal-500");
         btn.classList.add("bg-rose-500", "animate-pulse");
-        status.innerText = "Te escucho atentamente... Habla tranquila(o)";
+        status.innerText = "Te escucho... Habla tranquila(o)";
       };
 
       recognition.onresult = (e) => {
@@ -707,21 +789,107 @@
       if (status) status.innerText = "Toca el micrófono para hablar";
     }
 
-    // CONSULTA A GROQ
-    async function procesarConGroq() {
+    // ==========================================
+    // CUESTIONARIO ADAPTATIVO CON GROQ IA
+    // ==========================================
+    async function solicitarCuestionarioIA() {
       const sintomas = document.getElementById("txt-sintomas").value.trim();
       if (!sintomas) {
-        alert("Por favor describe tus síntomas antes de continuar.");
+        alert("Por favor indica qué molestia tienes antes de continuar.");
         return;
       }
 
       detenerVoz();
-      const btn = document.getElementById("btn-enviar-sintomas");
+      const btn = document.getElementById("btn-iniciar-preguntas");
       btn.disabled = true;
-      btn.innerText = "Consultando a Groq IA...";
+      btn.innerText = "La IA está formulando preguntas clínicas...";
 
       const payload = {
-        action: "evaluar_triaje",
+        action: "generar_preguntas",
+        edad: currentUser.edad,
+        sexo: currentUser.sexo,
+        bpmMedido: bpmCalculado,
+        sintomasRelatados: sintomas
+      };
+
+      try {
+        const res = await callBackend(payload);
+        if (res.success && res.preguntas) {
+          preguntasActuales = res.preguntas;
+          renderCuestionario(res.preguntas);
+          mostrarPasoModal("step-cuestionario");
+
+          // Leer la primera pregunta con la voz asistente
+          hablarAsistente("Para mayor precisión médica, por favor responde este breve cuestionario.");
+        } else {
+          alert("Error: " + res.message);
+        }
+      } catch (err) {
+        alert("Error de conexión: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Continuar con Evaluación Asistida</span><i data-lucide="sparkles" class="w-4 h-4"></i>`;
+        lucide.createIcons();
+      }
+    }
+
+    function renderCuestionario(preguntas) {
+      const container = document.getElementById("cuestionario-container");
+      container.innerHTML = "";
+      respuestasSeleccionadas = {};
+
+      preguntas.forEach((p, idx) => {
+        const card = document.createElement("div");
+        card.className = "bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2";
+        
+        const label = document.createElement("p");
+        label.className = "text-xs font-bold text-slate-800 leading-snug";
+        label.innerText = `${idx + 1}. ${p.pregunta}`;
+        card.appendChild(label);
+
+        const optionsBox = document.createElement("div");
+        optionsBox.className = "flex flex-col space-y-1.5";
+
+        p.opciones.forEach(op => {
+          const btnOp = document.createElement("button");
+          btnOp.type = "button";
+          btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
+          btnOp.innerText = op;
+          btnOp.onclick = () => {
+            // Desmarcar hermanos
+            optionsBox.querySelectorAll(".opcion-btn").forEach(b => {
+              b.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 font-medium transition text-slate-700";
+            });
+            // Marcar actual
+            btnOp.className = "opcion-btn text-left text-xs p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50 font-bold transition text-indigo-900";
+            respuestasSeleccionadas[p.id] = { pregunta: p.pregunta, respuesta: op };
+          };
+          optionsBox.appendChild(btnOp);
+        });
+
+        card.appendChild(optionsBox);
+        container.appendChild(card);
+      });
+    }
+
+    async function enviarRespuestasFinales() {
+      // Verificar que se hayan respondido
+      if (Object.keys(respuestasSeleccionadas).length < preguntasActuales.length) {
+        alert("Por favor selecciona una opción en cada una de las preguntas antes de continuar.");
+        return;
+      }
+
+      const btn = document.getElementById("btn-evaluar-final");
+      btn.disabled = true;
+      btn.innerText = "Generando diagnóstico clínico...";
+
+      let textoRespuestas = "";
+      for (const id in respuestasSeleccionadas) {
+        textoRespuestas += `- ${respuestasSeleccionadas[id].pregunta} -> Respuesta: ${respuestasSeleccionadas[id].respuesta}\n`;
+      }
+
+      const payload = {
+        action: "evaluar_triaje_final",
         dni: currentUser.dni,
         edad: currentUser.edad,
         sexo: currentUser.sexo,
@@ -729,7 +897,8 @@
         alergias: currentUser.alergias,
         bpmBasal: currentUser.bpmBasal || 75,
         bpmMedido: bpmCalculado,
-        sintomasRelatados: sintomas,
+        sintomasRelatados: document.getElementById("txt-sintomas").value.trim(),
+        respuestasCuestionario: textoRespuestas,
         urlFoto: "Sin foto"
       };
 
@@ -741,18 +910,18 @@
           if (resultadoIA.requiere_foto) {
             document.getElementById("motivo-foto-text").innerText = resultadoIA.motivo_foto || "Se requiere una fotografía de la zona afectada para la evaluación.";
             mostrarPasoModal("step-foto");
-            hablarAsistente("Para mayor precisión de los médicos, por favor tómale una foto de cerca a la zona afectada con buena luz.");
+            hablarAsistente("Para mayor precisión médica, por favor tómale una foto de cerca a la zona afectada con buena luz.");
           } else {
             mostrarResultadoFinal(resultadoIA);
           }
         } else {
-          alert("Aviso del Servidor: " + res.message);
+          alert("Error: " + res.message);
         }
       } catch (err) {
         alert("Error de conexión: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>Analizar con Inteligencia Médica</span><i data-lucide="sparkles" class="w-4 h-4"></i>`;
+        btn.innerHTML = `<span>Obtener Diagnóstico y Derivación</span><i data-lucide="check-circle" class="w-4 h-4"></i>`;
         lucide.createIcons();
       }
     }
@@ -801,7 +970,7 @@
       document.getElementById("res-especialidad").innerText = evaluacion.especialidad_derivacion;
       document.getElementById("res-bpm").innerText = bpmCalculado + " BPM (Basal: " + (currentUser?.bpmBasal || 75) + " BPM)";
 
-      hablarAsistente(`Tu evaluación ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido a la enfermera de guardia.`);
+      hablarAsistente(`Tu evaluación clínica ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido al panel de enfermería.`);
       lucide.createIcons();
     }
   </script>
