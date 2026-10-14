@@ -284,7 +284,7 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE VOZ (CERO TEXTO EN VIVO, SOLO SE ESCRIBE AL TERMINAR) -->
+        <!-- FASE 2: RELATO DE VOZ (SIN REPETICIONES, ASIGNACIÓN SEGURA AL TERMINAR) -->
         <div id="step-sintomas" class="space-y-4 text-center">
           <div>
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
@@ -311,7 +311,7 @@
             </div>
 
             <!-- BOTÓN PRINCIPAL -->
-            <button id="btn-mic-action" onclick="toggleMicrofonoSilencioso()" type="button"
+            <button id="btn-mic-action" onclick="toggleMicrofonoSeguro()" type="button"
               class="w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer">
               <i id="mic-main-icon" data-lucide="mic" class="w-7 h-7"></i>
             </button>
@@ -431,11 +431,11 @@
     let ultimoPicoTiempo = 0;
     let lenteCompletamenteCubierto = false;
 
-    // MOTOR DE VOZ CERO TEXTO EN VIVO (SOLO SE ESCRIBE AL DETENER)
+    // MOTOR DE VOZ SEGURO (SIN DUPLICACIÓN Y SIN PÉRDIDA DE AUDIO)
     let recognition = null;
     let microfonoActivo = false;
-    let bufferFrasesInterno = [];
-    let textoPrevioCuadro = "";
+    let textoReconocidoTemporal = "";
+    let textoPreviamenteEscrito = "";
 
     // CUESTIONARIO
     let preguntasActuales = [];
@@ -669,8 +669,8 @@
     // ==========================================
     function iniciarFlujoTriaje() {
       document.getElementById("txt-sintomas").value = "";
-      bufferFrasesInterno = [];
-      detenerMicrofonoSilencioso();
+      textoReconocidoTemporal = "";
+      detenerMicrofonoSeguro();
 
       document.getElementById("modal-triaje").classList.remove("hidden");
       mostrarPasoModal("step-ppg");
@@ -680,7 +680,7 @@
 
     function cerrarTriaje() {
       detenerSensorPPG();
-      detenerMicrofonoSilencioso();
+      detenerMicrofonoSeguro();
       document.getElementById("txt-sintomas").value = "";
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       document.getElementById("modal-triaje").classList.add("hidden");
@@ -864,21 +864,21 @@
 
     function pasarASintomas() {
       mostrarPasoModal("step-sintomas");
-      hablarAsistente("Pulso confirmado. Toca el micrófono verde para empezar a hablar. Habla a tu ritmo y vuelve a tocarlo cuando termines.");
+      hablarAsistente("Pulso confirmado. Toca el micrófono verde para empezar a hablar. Habla con calma y vuelve a tocarlo cuando termines.");
     }
 
     // =========================================================================
-    // MICRÓFONO CON CERO TRANSCRIPCIÓN EN VIVO (EL TEXTO SE COLOCA AL DETENER)
+    // MICRÓFONO ASÍNCRONO SIN DUPLICADOS (CON VOLCADO GARANTIZADO)
     // =========================================================================
-    function toggleMicrofonoSilencioso() {
+    function toggleMicrofonoSeguro() {
       if (microfonoActivo) {
-        detenerYVolcarTexto();
+        detenerMicrofonoSeguro();
       } else {
-        iniciarEscuchaSilenciosa();
+        iniciarMicrofonoSeguro();
       }
     }
 
-    function iniciarEscuchaSilenciosa() {
+    function iniciarMicrofonoSeguro() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert("Tu navegador no soporta micrófono web. Por favor escribe tus síntomas.");
@@ -886,16 +886,16 @@
       }
 
       const txt = document.getElementById("txt-sintomas");
-      textoPrevioCuadro = txt.value.trim();
-      bufferFrasesInterno = [];
+      textoPreviamenteEscrito = txt.value.trim();
+      textoReconocidoTemporal = "";
       microfonoActivo = true;
 
-      // UI: Muestra ondas y botón rojo, pero NO TOCA EL TEXTAREA
       const btn = document.getElementById("btn-mic-action");
       const icon = document.getElementById("mic-main-icon");
       const visualBox = document.getElementById("audio-visual-box");
       const label = document.getElementById("mic-status-label");
 
+      // UI: Grabando
       btn.className = "w-16 h-16 bg-rose-600 text-white rounded-full shadow-lg transition transform scale-105 flex items-center justify-center cursor-pointer ring-4 ring-rose-200 animate-pulse";
       icon.setAttribute("data-lucide", "square");
       visualBox.classList.remove("hidden");
@@ -906,85 +906,82 @@
       recognition = new SpeechRecognition();
       recognition.lang = "es-PE";
       recognition.continuous = true;
-      recognition.interimResults = false; // Sin resultados en vivo para que no repita
+      recognition.interimResults = false; // Sin repeticiones
 
-      // SE GUARDA EN MEMORIA INTERNA, JAMÁS SE ESCRIBE EN txt.value EN ESTE PASO
+      // Captura en memoria sin tocar txt.value en tiempo real
       recognition.onresult = (event) => {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const frase = event.results[i][0].transcript.trim();
-          if (frase && !bufferFrasesInterno.includes(frase)) {
-            bufferFrasesInterno.push(frase);
-          }
+        let textoCompletoSesion = "";
+        for (let i = 0; i < event.results.length; i++) {
+          textoCompletoSesion += event.results[i][0].transcript + " ";
         }
+        textoReconocidoTemporal = textoCompletoSesion.trim();
       };
 
       recognition.onerror = (e) => {
         console.warn("Speech error:", e.error);
       };
 
-      // Si el celular corta por silencio de varios segundos, reconectar sin apagar el micro
+      // Si el navegador corta por silencio, reconecta sin apagar el micro
       recognition.onend = () => {
         if (microfonoActivo) {
           try { recognition.start(); } catch(err){}
+        } else {
+          // CUANDO EL USUARIO PRESIONÓ TERMINAR: AQUÍ SE VUELCA EL TEXTO CON TOTAL CERTEZA
+          volcarTextoAlCuadro();
         }
       };
 
       try {
         recognition.start();
       } catch(err) {
-        detenerMicrofonoSilencioso();
+        detenerMicrofonoSeguro();
       }
     }
 
-    function detenerYVolcarTexto() {
+    function detenerMicrofonoSeguro() {
       microfonoActivo = false;
-      if (recognition) {
-        try { recognition.stop(); } catch(e){}
-        recognition = null;
+
+      const label = document.getElementById("mic-status-label");
+      if (label) {
+        label.innerText = "⏳ Procesando tu relato...";
+        label.className = "text-[11px] font-bold text-amber-600";
       }
 
+      // Detener de forma limpia sin destruir el objeto para permitir que onend procese
+      if (recognition) {
+        try { recognition.stop(); } catch(e){}
+      } else {
+        volcarTextoAlCuadro();
+      }
+    }
+
+    function volcarTextoAlCuadro() {
       const txt = document.getElementById("txt-sintomas");
       const btn = document.getElementById("btn-mic-action");
       const icon = document.getElementById("mic-main-icon");
       const visualBox = document.getElementById("audio-visual-box");
       const label = document.getElementById("mic-status-label");
 
-      // UI restablecida
       if (visualBox) visualBox.classList.add("hidden");
       if (btn) {
         btn.className = "w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer";
       }
       if (icon) icon.setAttribute("data-lucide", "mic");
-      if (label) {
-        label.innerText = "✅ Relato transcrito. Toca para agregar más";
-        label.className = "text-[11px] font-bold text-teal-700";
-      }
-      lucide.createIcons();
 
-      // RECIÉN AQUÍ SE ESCRIBE EN EL TEXTAREA UNA SOLA VEZ
-      if (bufferFrasesInterno.length > 0) {
-        const textoLimpio = bufferFrasesInterno.join(". ");
-        txt.value = (textoPrevioCuadro ? textoPrevioCuadro + ". " + textoLimpio : textoLimpio).trim();
+      // Volcar el texto sin duplicados
+      if (textoReconocidoTemporal) {
+        txt.value = (textoPreviamenteEscrito ? textoPreviamenteEscrito + ". " + textoReconocidoTemporal : textoReconocidoTemporal).trim();
+        if (label) {
+          label.innerText = "✅ Relato transcrito. Toca para agregar más";
+          label.className = "text-[11px] font-bold text-teal-700";
+        }
+      } else {
+        if (label) {
+          label.innerText = "Toca para encender el micrófono";
+          label.className = "text-[11px] font-bold text-slate-500";
+        }
       }
-    }
 
-    function detenerMicrofonoSilencioso() {
-      microfonoActivo = false;
-      if (recognition) {
-        try { recognition.stop(); } catch(e){}
-        recognition = null;
-      }
-      const visualBox = document.getElementById("audio-visual-box");
-      const btn = document.getElementById("btn-mic-action");
-      const icon = document.getElementById("mic-main-icon");
-      const label = document.getElementById("mic-status-label");
-      if (visualBox) visualBox.classList.add("hidden");
-      if (btn) btn.className = "w-16 h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg transition transform active:scale-95 flex items-center justify-center cursor-pointer";
-      if (icon) icon.setAttribute("data-lucide", "mic");
-      if (label) {
-        label.innerText = "Toca para encender el micrófono";
-        label.className = "text-[11px] font-bold text-slate-500";
-      }
       lucide.createIcons();
     }
 
@@ -998,7 +995,7 @@
         return;
       }
 
-      detenerMicrofonoSilencioso();
+      detenerMicrofonoSeguro();
       const btn = document.getElementById("btn-iniciar-preguntas");
       btn.disabled = true;
       btn.innerText = "Generando preguntas clínicas a tu medida...";
