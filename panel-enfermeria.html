@@ -6,6 +6,7 @@
   <title>SaludConecta - Consola Central de Enfermería y Triaje</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js para analítica epidemiológica -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @keyframes pulse-emergency {
@@ -13,6 +14,15 @@
       50% { border-color: rgba(244, 63, 94, 0.4); box-shadow: 0 0 6px rgba(225, 29, 72, 0.1); }
     }
     .badge-rojo-pulse { animation: pulse-emergency 1.8s infinite ease-in-out; }
+
+    @keyframes slide-in-right {
+      0% { transform: translateX(120%); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+    .toast-slide-in {
+      animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -25,6 +35,36 @@
     // URL DE TU DESPLIEGUE ACTIVO EN APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec";
   </script>
+
+  <!-- ============================================== -->
+  <!-- TOAST FLOTANTE DE NUEVO INGRESO (EN VIVO)      -->
+  <!-- ============================================== -->
+  <div id="toast-nuevo-paciente" class="hidden fixed top-5 right-5 z-50 max-w-sm w-full bg-slate-900 text-white rounded-3xl p-4 shadow-2xl border-2 border-teal-400 toast-slide-in">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center flex-shrink-0 border border-teal-500/30">
+          <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce"></i>
+        </div>
+        <div>
+          <span class="text-[10px] font-black tracking-wider uppercase bg-teal-500 text-slate-950 px-2 py-0.5 rounded-md" id="toast-severidad-badge">
+            NUEVO INGRESO
+          </span>
+          <h4 class="text-xs font-black text-white mt-1" id="toast-nombre-paciente">Nombre del Paciente</h4>
+          <p class="text-[11px] text-teal-300 font-semibold" id="toast-sospecha-ia">Sospecha diagnóstica</p>
+        </div>
+      </div>
+      <button onclick="cerrarToastNuevo()" class="text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+      <span class="text-slate-400 font-mono" id="toast-dni-paciente">DNI: --------</span>
+      <button onclick="verCasoDesdeToast()" class="text-teal-400 hover:underline font-bold flex items-center space-x-1">
+        <span>Gestionar ahora</span>
+        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+      </button>
+    </div>
+  </div>
 
   <!-- ============================================== -->
   <!-- VISTA 1: LOGIN DE ENFERMERÍA                   -->
@@ -199,7 +239,6 @@
               <option value="VERDE">🟢 Solo Verde</option>
             </select>
 
-            <!-- NUEVO: SELECTOR DE ORDENAMIENTO -->
             <select id="criterio-orden" onchange="aplicarFiltros()" class="py-1.5 px-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-900">
               <option value="ESI">🚨 Prioridad Clínica (Rojo primero)</option>
               <option value="RECIENTE">⏱️ Por Hora de Llegada (Más recientes arriba)</option>
@@ -209,7 +248,7 @@
           <div class="flex items-center space-x-2 justify-end">
             <label class="flex items-center space-x-1.5 text-xs text-slate-600 cursor-pointer select-none">
               <input type="checkbox" id="check-autorefresh" checked onchange="toggleAutoRefresh()" class="rounded text-teal-600">
-              <span>Auto-refresh (20s)</span>
+              <span>Auto-refresh (15s)</span>
             </label>
             <button onclick="cargarBandejaTriajes()" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition">
               <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-refresh"></i>
@@ -498,26 +537,88 @@
     let chartPatologiasInstancia = null;
     let chartSeveridadesInstancia = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
-      if (currentNurse) mostrarDashboard();
-      else mostrarLogin();
-    });
+    // CONTROL DE NUEVOS INGRESOS Y CACHÉ DE NOMBRES
+    let setIdsConocidos = new Set();
+    let esPrimeraCarga = true;
+    let cacheNombresPacientes = {};
+    let audioCtxGlobal = null;
+    let casoEnToast = null;
 
+    function getAudioContext() {
+      if (!audioCtxGlobal) {
+        audioCtxGlobal = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtxGlobal.state === "suspended") {
+        audioCtxGlobal.resume();
+      }
+      return audioCtxGlobal;
+    }
+
+    // Desbloquear audio con el primer toque
+    window.addEventListener("click", () => { getAudioContext(); }, { once: false });
+    window.addEventListener("touchstart", () => { getAudioContext(); }, { once: false });
+
+    // TONO DE ALERTA DE GUARDIA (CHIME DOBLE)
+    function reproducirTonoNuevoRegistro() {
+      try {
+        const ctx = getAudioContext();
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = "sine";
+        osc2.type = "sine";
+        osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // Re5
+        osc2.frequency.setValueAtTime(880.00, ctx.currentTime + 0.15); // La5
+
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.15);
+        osc2.start(ctx.currentTime + 0.15);
+        osc2.stop(ctx.currentTime + 0.9);
+      } catch (e) {}
+    }
+
+    // SIRENA PARA CASOS CRÍTICOS (ROJO)
     function reproducirAlertaEmergencia() {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.35);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(ctx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
+        osc.stop(ctx.currentTime + 0.4);
       } catch (e) {}
+    }
+
+    // SÍNTESIS DE VOZ: ANUNCIO CLÍNICO AL PERSONAL DE GUARDIA
+    function anunciarNuevoPacientePorVoz(nombre, sospecha, severidad) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const mensaje = `Atención enfermería. Nuevo registro del paciente ${nombre}. Sospecha de la inteligencia artificial: ${sospecha}. Gravedad: ${severidad}.`;
+      const utterance = new SpeechSynthesisUtterance(mensaje);
+      utterance.lang = "es-PE";
+      utterance.rate = 0.94;
+      utterance.pitch = 1.05;
+
+      const voces = window.speechSynthesis.getVoices();
+      const vozFem = voces.find(v => v.lang.startsWith("es") && (v.name.includes("female") || v.name.includes("mujer") || v.name.includes("paulina") || v.name.includes("monica")));
+      if (vozFem) utterance.voice = vozFem;
+
+      window.speechSynthesis.speak(utterance);
     }
 
     async function callBackend(payload) {
@@ -529,6 +630,24 @@
       const txt = await resp.text();
       return JSON.parse(txt);
     }
+
+    // RESOLVER NOMBRE DEL PACIENTE
+    async function obtenerNombrePaciente(dni) {
+      if (cacheNombresPacientes[dni]) return cacheNombresPacientes[dni];
+      try {
+        const res = await callBackend({ action: "obtener_expediente_paciente", dni: dni });
+        if (res.success && res.paciente && res.paciente.nombre) {
+          cacheNombresPacientes[dni] = res.paciente.nombre;
+          return res.paciente.nombre;
+        }
+      } catch (e) {}
+      return `Paciente DNI ${dni}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (currentNurse) mostrarDashboard();
+      else mostrarLogin();
+    });
 
     function mostrarLogin() {
       document.getElementById("view-dashboard").classList.add("hidden");
@@ -635,7 +754,7 @@
     }
 
     // ==============================================
-    // CARGA DE COLA DE TRIAJES (EN VIVO)
+    // CARGA DE COLA DE TRIAJES (DETECCIÓN DE NUEVOS)
     // ==============================================
     async function cargarBandejaTriajes() {
       const icon = document.getElementById("icon-refresh");
@@ -644,9 +763,28 @@
       try {
         const res = await callBackend({ action: "obtener_triajes_pendientes" });
         if (res.success && res.triajes) {
+          const casosNuevos = [];
+
+          // Identificar si entraron nuevos registros
+          res.triajes.forEach(c => {
+            if (!setIdsConocidos.has(c.idTriaje)) {
+              if (!esPrimeraCarga) {
+                casosNuevos.push(c);
+              }
+              setIdsConocidos.add(c.idTriaje);
+            }
+          });
+
           todosLosCasos = res.triajes;
 
-          if (todosLosCasos.some(c => c.severidad === "ROJO")) reproducirAlertaEmergencia();
+          // Si hay casos nuevos tras la primera carga, DISPARAR ALARMA Y VOZ
+          if (!esPrimeraCarga && casosNuevos.length > 0) {
+            const masReciente = casosNuevos[casosNuevos.length - 1];
+            gestionarAvisoNuevoIngreso(masReciente);
+          } else if (esPrimeraCarga) {
+            esPrimeraCarga = false;
+          }
+
           actualizarContadores();
           aplicarFiltros();
         }
@@ -654,6 +792,56 @@
         console.error("Error:", err);
       } finally {
         icon.classList.remove("animate-spin");
+      }
+    }
+
+    // GESTIONAR NOTIFICACIÓN VISUAL Y AUDITIVA
+    async function gestionarAvisoNuevoIngreso(caso) {
+      // 1. Tono sonoro
+      if (caso.severidad === "ROJO") {
+        reproducirAlertaEmergencia();
+      } else {
+        reproducirTonoNuevoRegistro();
+      }
+
+      // 2. Obtener el nombre del paciente
+      const nombrePaciente = await obtenerNombrePaciente(caso.dni);
+      const sospecha = caso.sospecha || "Evaluación Médica General";
+
+      // 3. Mostrar Toast Flotante
+      casoEnToast = caso;
+      document.getElementById("toast-nombre-paciente").innerText = nombrePaciente;
+      document.getElementById("toast-sospecha-ia").innerText = `IA: ${sospecha}`;
+      document.getElementById("toast-dni-paciente").innerText = `DNI: ${caso.dni} • ${caso.bpm} BPM`;
+      
+      const badgeSev = document.getElementById("toast-severidad-badge");
+      badgeSev.innerText = `NUEVO • ${caso.severidad}`;
+      if (caso.severidad === "ROJO") badgeSev.className = "text-[10px] font-black tracking-wider uppercase bg-rose-600 text-white px-2 py-0.5 rounded-md animate-pulse";
+      else if (caso.severidad === "NARANJA") badgeSev.className = "text-[10px] font-black tracking-wider uppercase bg-orange-500 text-white px-2 py-0.5 rounded-md";
+      else if (caso.severidad === "AMARILLO") badgeSev.className = "text-[10px] font-black tracking-wider uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md";
+      else badgeSev.className = "text-[10px] font-black tracking-wider uppercase bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-md";
+
+      document.getElementById("toast-nuevo-paciente").classList.remove("hidden");
+      lucide.createIcons();
+
+      // 4. Locución en Español
+      anunciarNuevoPacientePorVoz(nombrePaciente, sospecha, caso.severidad);
+
+      // Auto-ocultar toast después de 14 segundos
+      setTimeout(() => {
+        cerrarToastNuevo();
+      }, 14000);
+    }
+
+    function cerrarToastNuevo() {
+      document.getElementById("toast-nuevo-paciente").classList.add("hidden");
+      casoEnToast = null;
+    }
+
+    function verCasoDesdeToast() {
+      if (casoEnToast) {
+        abrirModalGestion(casoEnToast.idTriaje);
+        cerrarToastNuevo();
       }
     }
 
@@ -680,24 +868,20 @@
       const criterioOrden = document.getElementById("criterio-orden").value;
       const contenedor = document.getElementById("contenedor-casos");
 
-      // 1. Filtrado
       let filtrados = todosLosCasos.filter(item => {
         const matchTexto = String(item.dni).includes(q) || String(item.idTriaje).toLowerCase().includes(q) || String(item.sintomas).toLowerCase().includes(q);
         const matchSev = (filtroSev === "TODOS") || (item.severidad === filtroSev);
         return matchTexto && matchSev;
       });
 
-      // 2. Ordenamiento configurable
       const jerarquia = { "ROJO": 1, "NARANJA": 2, "AMARILLO": 3, "VERDE": 4 };
       if (criterioOrden === "ESI") {
-        // Orden por Severidad, pero dentro del mismo color, el MÁS RECIENTE ARRIBA (mayor número de fila)
         filtrados.sort((a, b) => {
           const diffSev = (jerarquia[a.severidad] || 99) - (jerarquia[b.severidad] || 99);
           if (diffSev !== 0) return diffSev;
           return Number(b.fila) - Number(a.fila);
         });
       } else {
-        // Orden estrictamente cronológico: los más recientes arriba
         filtrados.sort((a, b) => Number(b.fila) - Number(a.fila));
       }
 
@@ -715,7 +899,6 @@
         const ambulanciaDespachada = c.estado === "AMBULANCIA_DESPACHADA";
         const esElMasReciente = (Number(c.fila) === filaMaxima);
 
-        // BORDES Y COLORES SEGÚN SEVERIDAD ESI
         let borderClass = "border-slate-200 bg-white";
         let badgeColor = "bg-slate-100 text-slate-800 border-slate-300";
 
@@ -733,6 +916,8 @@
           badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-300";
         }
 
+        const nombreMostrado = cacheNombresPacientes[c.dni] || `DNI: ${c.dni}`;
+
         card.className = `border-2 ${borderClass} rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 transition duration-150 relative`;
 
         card.innerHTML = `
@@ -742,7 +927,7 @@
                 ${c.severidad}
               </span>
               <span class="font-mono text-xs font-bold text-slate-700">${c.idTriaje}</span>
-              <span class="text-xs font-bold text-slate-900">• DNI: ${c.dni}</span>
+              <span class="text-xs font-bold text-slate-900">• ${nombreMostrado}</span>
               ${esElMasReciente ? `<span class="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse shadow-sm">✨ RECIÉN INGRESADO</span>` : ''}
               ${ambulanciaDespachada ? `<span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-pulse flex items-center space-x-1 shadow-sm"><i data-lucide="siren" class="w-3 h-3"></i><span>AMBULANCIA EN RUTA</span></span>` : ''}
             </div>
@@ -799,10 +984,12 @@
 
     function iniciarAutoRefresh() {
       clearInterval(autoRefreshInterval);
-      autoRefreshInterval = setInterval(cargarBandejaTriajes, 20000);
+      autoRefreshInterval = setInterval(cargarBandejaTriajes, 15000); // Consulta cada 15s
     }
 
+    // ==============================================
     // GESTIÓN Y DERIVACIÓN
+    // ==============================================
     function abrirModalGestion(idTriaje) {
       const caso = todosLosCasos.find(c => c.idTriaje === idTriaje);
       if (!caso) return;
