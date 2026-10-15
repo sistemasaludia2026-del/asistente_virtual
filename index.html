@@ -18,13 +18,28 @@
     .wave-bar {
       animation: soundwave 1s infinite ease-in-out;
     }
-    /* Animación de alerta para ambulancia */
-    @keyframes pulse-sirena {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); }
-      50% { transform: scale(1.03); box-shadow: 0 0 0 14px rgba(225, 29, 72, 0); }
+
+    /* EFECTO PARPADEANTE DE ALERTA DE AMBULANCIA */
+    @keyframes emergency-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+        border-color: rgba(225, 29, 72, 1);
+      }
+      50% {
+        box-shadow: 0 0 0 12px rgba(225, 29, 72, 0);
+        border-color: rgba(254, 205, 211, 1);
+      }
     }
-    .sirena-pulse-box {
-      animation: pulse-sirena 1.5s infinite;
+    .siren-blink {
+      animation: emergency-pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes flash-text {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .flash-text {
+      animation: flash-text 0.9s infinite ease-in-out;
     }
   </style>
 </head>
@@ -55,22 +70,10 @@
       </div>
     </header>
 
-    <!-- ALERTAS -->
+    <!-- ALERTAS GENERALES -->
     <div id="alert-box" class="hidden mx-4 mt-3 p-3 rounded-2xl text-xs font-semibold flex items-center space-x-2 shadow-sm transition-all">
       <i id="alert-icon" data-lucide="info" class="w-4 h-4 flex-shrink-0"></i>
       <span id="alert-text">Mensaje</span>
-    </div>
-
-    <!-- BANNER DE CONSULTA EN REVISIÓN ACTIVA -->
-    <div id="banner-revision-activa" class="hidden mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
-      <div class="flex items-center space-x-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-        <div class="text-[11px] leading-tight text-amber-900">
-          <p class="font-bold">Consulta médica en revisión</p>
-          <p class="text-amber-700">Enfermería está evaluando tu caso...</p>
-        </div>
-      </div>
-      <span class="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md" id="banner-triaje-id">TRJ-XXXX</span>
     </div>
 
     <!-- ============================================== -->
@@ -179,9 +182,11 @@
     </section>
 
     <!-- ============================================== -->
-    <!-- VISTA 3: PRINCIPAL PACIENTE                    -->
+    <!-- VISTA 3: PRINCIPAL PACIENTE (HOME)             -->
     <!-- ============================================== -->
     <section id="view-home" class="hidden p-5 flex-1 flex flex-col space-y-4">
+      
+      <!-- PERFIL ACTIVO SUPERIOR -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Expediente Activo</p>
@@ -190,6 +195,97 @@
         <button onclick="logout()" title="Cerrar Sesión" class="p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl transition">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- CASILLA 1: NOTIFICACIÓN DE AMBULANCIA (PARPADEANTE)     -->
+      <!-- ======================================================= -->
+      <div id="box-ambulancia-home" class="hidden border-4 border-rose-600 bg-rose-50/95 rounded-3xl p-4 shadow-xl siren-blink space-y-2.5">
+        <div class="flex items-center justify-between border-b border-rose-200 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 bg-rose-600 text-white rounded-xl">
+              <i data-lucide="siren" class="w-5 h-5 animate-bounce"></i>
+            </span>
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-wider text-rose-700 block">Emergencia en Curso</span>
+              <h3 class="text-xs font-black text-rose-900 flash-text">AMBULANCIA EN CAMINO A TU UBICACIÓN</h3>
+            </div>
+          </div>
+          <span class="w-3 h-3 rounded-full bg-rose-600 animate-ping"></span>
+        </div>
+
+        <div class="bg-white/90 border border-rose-200 rounded-2xl p-3 text-xs space-y-1 text-slate-800">
+          <p><strong>Unidad Móvil:</strong> <span id="home-amb-unidad" class="font-extrabold text-rose-700">SAMU Alfa-03</span></p>
+          <p><strong>Tiempo Estimado:</strong> <span id="home-amb-eta" class="font-bold text-slate-900">10 a 15 minutos</span></p>
+          <p class="text-[11px] text-slate-600 italic pt-1 border-t border-rose-100" id="home-amb-indicaciones">
+            Mantener al paciente en reposo, puerta accesible y familiares atentos.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-rose-700 font-bold flex items-center space-x-1">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-600"></i>
+            <span>Equipo paramédico en ruta</span>
+          </span>
+          <button onclick="reproducirTonoNotificacion('sirena')" class="text-rose-800 font-bold underline hover:text-rose-950">
+            Reanudar Sirena
+          </button>
+        </div>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- CASILLA 2: NOTIFICACIÓN DE DERIVACIÓN MÉDICA EN EL HOME -->
+      <!-- ======================================================= -->
+      <div id="box-derivacion-home" class="hidden border-2 border-emerald-500 bg-emerald-50/80 rounded-3xl p-4 shadow-md space-y-2.5">
+        <div class="flex items-center justify-between border-b border-emerald-200 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 bg-emerald-600 text-white rounded-xl">
+              <i data-lucide="bell-ring" class="w-5 h-5"></i>
+            </span>
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Nueva Notificación</span>
+              <h3 class="text-xs font-black text-slate-900">¡Tu Derivación Médica está Confirmada!</h3>
+            </div>
+          </div>
+          <button onclick="descartarNotificacionHome()" title="Ocultar del inicio" class="text-slate-400 hover:text-slate-600 p-1">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="bg-white border border-emerald-200 rounded-2xl p-3 text-xs space-y-1.5 text-slate-800 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Especialidad:</span>
+            <span id="home-notif-area" class="font-black text-teal-800 text-xs bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">Medicina General</span>
+          </div>
+          <p><strong class="text-slate-600">Enfermera:</strong> <span id="home-notif-enfermera" class="font-bold text-slate-800">Lic. de Guardia</span></p>
+          
+          <div class="pt-1.5 border-t border-slate-100">
+            <strong class="text-slate-600 block mb-0.5">Indicaciones de la Consulta:</strong>
+            <p id="home-notif-indicaciones" class="text-slate-700 leading-relaxed italic bg-slate-50 p-2 rounded-xl text-[11px]"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-0.5">
+          <button onclick="escucharIndicacionesHome()" class="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1 shadow-sm transition">
+            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+            <span>Escuchar Indicaciones</span>
+          </button>
+          <button onclick="cambiarPestanaHome('tab-historial')" class="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition">
+            Ver Expediente
+          </button>
+        </div>
+      </div>
+
+      <!-- BANNER DE TRIAJE EN REVISIÓN (PENDIENTE) -->
+      <div id="banner-revision-activa" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+          <div class="text-[11px] leading-tight text-amber-900">
+            <p class="font-bold">Consulta enviada a enfermería</p>
+            <p class="text-amber-700">En espera de evaluación médica...</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md" id="banner-triaje-id">TRJ-XXXX</span>
       </div>
 
       <!-- SELECTOR DE PESTAÑAS -->
@@ -246,9 +342,9 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
-    <!-- MODAL DE NOTIFICACIÓN EN TIEMPO REAL (ENFERMERÍA) -->
-    <!-- ============================================== -->
+    <!-- ======================================================= -->
+    <!-- MODAL DE NOTIFICACIÓN EN TIEMPO REAL (POPUP EMERGENTE)  -->
+    <!-- ======================================================= -->
     <div id="modal-notificacion-vivo" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div id="notif-card-box" class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-2 border-emerald-500 transition-all">
         
@@ -274,13 +370,13 @@
         </div>
 
         <button onclick="cerrarModalNotificacion()" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition shadow-md">
-          Entendido / Ir a Mis Registros
+          Entendido / Ver en Pantalla Principal
         </button>
       </div>
     </div>
 
     <!-- ============================================== -->
-    <!-- MODAL DE TRIAJE (PPG + VOZ + CUESTIONARIO + FOTO) -->
+    <!-- MODAL DE TRIAJE (PPG + VOZ + CUESTIONARIO)     -->
     <!-- ============================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
@@ -524,7 +620,6 @@
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         if (tipo === "chime") {
-          // Tono agradable bifónico de mensaje confirmado (Do - Sol)
           const osc1 = ctx.createOscillator();
           const osc2 = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -542,7 +637,6 @@
           osc2.start(ctx.currentTime + 0.12); 
           osc2.stop(ctx.currentTime + 0.85);
         } else if (tipo === "sirena") {
-          // Sirena de ambulancia en camino (modulación periódica de emergencia)
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "sawtooth";
@@ -581,10 +675,16 @@
       }
     }
 
+    function escucharIndicacionesHome() {
+      const texto = document.getElementById("home-notif-indicaciones").innerText;
+      if (texto) hablarAsistente(texto);
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       if (currentUser) {
         renderHome(currentUser);
         cargarHistorial();
+        restaurarNotificacionesGuardadas();
         iniciarMonitoreoSegundoPlano();
       }
     });
@@ -710,6 +810,7 @@
           currentUser = res.user;
           renderHome(res.user);
           cargarHistorial();
+          restaurarNotificacionesGuardadas();
           iniciarMonitoreoSegundoPlano();
         } else {
           showAlert(res.message, "error");
@@ -802,8 +903,59 @@
       }
     }
 
+    // =======================================================
+    // GESTIÓN DE NOTIFICACIONES EN PANTALLA PRINCIPAL (HOME)
+    // =======================================================
+    function restaurarNotificacionesGuardadas() {
+      // Ambulancia
+      const ambData = JSON.parse(localStorage.getItem("salud_alerta_amb") || "null");
+      if (ambData) {
+        mostrarAmbulanciaEnHome(ambData);
+      }
+
+      // Derivación
+      const derivData = JSON.parse(localStorage.getItem("salud_notif_deriv") || "null");
+      if (derivData) {
+        mostrarDerivacionEnHome(derivData);
+      }
+    }
+
+    function mostrarAmbulanciaEnHome(data) {
+      document.getElementById("box-ambulancia-home").classList.remove("hidden");
+      
+      // Extraer unidad y ETA si vienen formateados en notasClinicas
+      let unidad = "SAMU Móvil";
+      let eta = "En camino";
+      let indicaciones = data.notasClinicas || "Mantener acceso despejado y paciente en reposo.";
+
+      if (data.notasClinicas && data.notasClinicas.includes("UNIDAD:")) {
+        const matchU = data.notasClinicas.match(/UNIDAD:\s*([^\|\]]+)/);
+        if (matchU) unidad = matchU[1].trim();
+        const matchE = data.notasClinicas.match(/LLEGADA:\s*([^\|\]]+)/);
+        if (matchE) eta = matchE[1].trim();
+      }
+
+      document.getElementById("home-amb-unidad").innerText = unidad;
+      document.getElementById("home-amb-eta").innerText = eta;
+      document.getElementById("home-amb-indicaciones").innerText = indicaciones;
+      lucide.createIcons();
+    }
+
+    function mostrarDerivacionEnHome(data) {
+      document.getElementById("box-derivacion-home").classList.remove("hidden");
+      document.getElementById("home-notif-area").innerText = data.especialidadFinal || "Medicina General";
+      document.getElementById("home-notif-enfermera").innerText = data.enfermeraResponsable || "Lic. de Guardia";
+      document.getElementById("home-notif-indicaciones").innerText = data.notasClinicas || "Sin indicaciones adicionales.";
+      lucide.createIcons();
+    }
+
+    function descartarNotificacionHome() {
+      document.getElementById("box-derivacion-home").classList.add("hidden");
+      localStorage.removeItem("salud_notif_deriv");
+    }
+
     // ==============================================
-    // MONITOR INTELIGENTE EN TIEMPO REAL (SMART POLLING)
+    // MONITOR EN TIEMPO REAL (SMART POLLING)
     // ==============================================
     function iniciarMonitoreoSegundoPlano() {
       clearInterval(pollingInterval);
@@ -817,7 +969,7 @@
           });
 
           if (res.success && (res.estado === "DERIVADO" || res.estado === "AMBULANCIA_DESPACHADA")) {
-            // El caso fue atendido por la enfermera
+            // El caso fue atendido por enfermería
             localStorage.removeItem("salud_triaje_activo");
             ultimoTriajeMonitoreado = null;
             document.getElementById("banner-revision-activa").classList.add("hidden");
@@ -828,7 +980,7 @@
         } catch (e) {
           console.warn("Polling error:", e);
         }
-      }, 9000); // Consulta cada 9 segundos
+      }, 9000); // 9 segundos
     }
 
     function dispararNotificacionResolucion(data) {
@@ -838,16 +990,27 @@
       const badge = document.getElementById("notif-badge");
 
       if (isAmbulancia) {
+        // 1. Guardar y encender en la Pantalla Principal (Parpadeante)
+        localStorage.setItem("salud_alerta_amb", JSON.stringify(data));
+        mostrarAmbulanciaEnHome(data);
         reproducirTonoNotificacion("sirena");
-        cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-4 border-rose-600 sirena-pulse-box transition-all";
+
+        // 2. Configurar Popup Modal
+        cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-4 border-rose-600 siren-blink transition-all";
         iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-rose-100 text-rose-600";
         iconBox.innerHTML = `<i data-lucide="siren" class="w-8 h-8 animate-bounce"></i>`;
         badge.className = "px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white tracking-wider";
         badge.innerText = "🚨 AMBULANCIA EN CAMINO";
         document.getElementById("notif-titulo").innerText = "¡Unidad de Emergencia Despachada!";
-        document.getElementById("notif-subtitulo").innerText = "La ambulancia y el equipo paramédico están en ruta hacia tu ubicación.";
+        document.getElementById("notif-subtitulo").innerText = "El equipo paramédico está en ruta hacia tu ubicación.";
+        hablarAsistente("Atención: Una unidad de ambulancia ha sido enviada a tu auxilio. Mantén la calma y la puerta de acceso accesible.");
       } else {
+        // 1. Guardar y mostrar en Casilla de Derivación del Home
+        localStorage.setItem("salud_notif_deriv", JSON.stringify(data));
+        mostrarDerivacionEnHome(data);
         reproducirTonoNotificacion("chime");
+
+        // 2. Configurar Popup Modal
         cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-2 border-emerald-500 transition-all";
         iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
         iconBox.innerHTML = `<i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>`;
@@ -855,6 +1018,7 @@
         badge.innerText = "Cita Confirmada";
         document.getElementById("notif-titulo").innerText = "¡Tu consulta fue atendida!";
         document.getElementById("notif-subtitulo").innerText = "El personal de enfermería ha emitido tu orden médica:";
+        hablarAsistente(`Tu orden médica ha sido confirmada para ${data.especialidadFinal}. Ya puedes revisar el horario y tus indicaciones en la pantalla principal.`);
       }
 
       document.getElementById("notif-area").innerText = data.especialidadFinal || "Medicina General";
@@ -863,18 +1027,11 @@
 
       document.getElementById("modal-notificacion-vivo").classList.remove("hidden");
       lucide.createIcons();
-
-      // Locución auditiva
-      if (isAmbulancia) {
-        hablarAsistente("Atención: Una unidad de ambulancia ha sido despachada a tu auxilio. Por favor mantén la calma y la puerta de acceso accesible.");
-      } else {
-        hablarAsistente(`Tu orden médica ha sido confirmada para ${data.especialidadFinal}. Ya puedes revisar el horario y tus indicaciones.`);
-      }
     }
 
     function cerrarModalNotificacion() {
       document.getElementById("modal-notificacion-vivo").classList.add("hidden");
-      cambiarPestanaHome("tab-historial");
+      // Se queda en la pantalla principal donde ambas casillas están visibles
     }
 
     // ==============================================
@@ -1079,7 +1236,7 @@
     }
 
     // ==============================================
-    // MOTOR DE DICTADO POR VOZ SIN DUPLICACIONES
+    // MOTOR DE DICTADO POR VOZ
     // ==============================================
     function setIconoMic(nombre) {
       const btn = document.getElementById("btn-mic-action");
@@ -1382,7 +1539,6 @@
         if (res.success && res.evaluacion) {
           resultadoIA = res.evaluacion;
           
-          // Activamos el tracking del triaje para que el polling lo escuche
           ultimoTriajeMonitoreado = res.idTriaje;
           localStorage.setItem("salud_triaje_activo", res.idTriaje);
           document.getElementById("banner-revision-activa").classList.remove("hidden");
