@@ -6,7 +6,6 @@
   <title>SaludConecta - Consola Central de Enfermería y Triaje</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Chart.js para analítica epidemiológica -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @keyframes pulse-emergency {
@@ -74,7 +73,6 @@
         </button>
       </div>
 
-      <!-- FORMULARIO DE REGISTRO INICIAL (OPCIONAL) -->
       <form id="form-registro-enfermera" onsubmit="handleNurseRegister(event)" class="hidden pt-4 border-t border-slate-200 space-y-3 text-xs">
         <p class="font-bold text-slate-800">Alta de Personal Colegiado</p>
         <input type="text" id="reg-nurse-nombre" placeholder="Nombre Completo (ej. Lic. Rosa García)" required class="w-full p-2 bg-slate-50 border rounded-lg">
@@ -124,7 +122,6 @@
         </button>
       </nav>
 
-      <!-- DATOS DE ENFERMERÍA Y LOGOUT -->
       <div class="flex items-center space-x-4">
         <div class="text-right hidden sm:block">
           <p id="nurse-display-name" class="text-xs font-bold text-white">Lic. de Guardia</p>
@@ -142,11 +139,11 @@
       <!-- SECCIÓN 1: COLA DE TRIAJE EN TIEMPO REAL       -->
       <!-- ============================================== -->
       <section id="sec-triaje" class="space-y-6">
-        <!-- MÉTRICAS SUPERIORES -->
+        <!-- MÉTRICAS SUPERIORES CON CLIC PARA FILTRAR -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div onclick="filtrarPorMetrica('TODOS')" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between cursor-pointer hover:border-slate-400 transition">
             <div>
-              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendientes</p>
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendientes Totales</p>
               <h3 id="stat-pendientes" class="text-2xl font-black text-slate-800 mt-0.5">0</h3>
             </div>
             <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
@@ -154,7 +151,7 @@
             </div>
           </div>
 
-          <div class="bg-white border border-rose-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div onclick="filtrarPorMetrica('ROJO')" class="bg-white border border-rose-200 rounded-2xl p-4 shadow-sm flex items-center justify-between cursor-pointer hover:border-rose-400 transition">
             <div>
               <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider">Críticos (Rojo)</p>
               <h3 id="stat-rojos" class="text-2xl font-black text-rose-600 mt-0.5">0</h3>
@@ -164,7 +161,7 @@
             </div>
           </div>
 
-          <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div onclick="filtrarPorMetrica('NARANJA')" class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex items-center justify-between cursor-pointer hover:border-amber-400 transition">
             <div>
               <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Urgentes (Naran/Amar)</p>
               <h3 id="stat-urgentes" class="text-2xl font-black text-amber-600 mt-0.5">0</h3>
@@ -174,7 +171,7 @@
             </div>
           </div>
 
-          <div class="bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div onclick="filtrarPorMetrica('VERDE')" class="bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-400 transition">
             <div>
               <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Leves (Verde)</p>
               <h3 id="stat-verdes" class="text-2xl font-black text-emerald-600 mt-0.5">0</h3>
@@ -185,10 +182,10 @@
           </div>
         </div>
 
-        <!-- FILTROS Y CONTROLES -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div class="flex items-center space-x-2 flex-1">
-            <div class="relative flex-1 max-w-sm">
+        <!-- FILTROS Y ORDENAMIENTO -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 flex-1">
+            <div class="relative flex-1 min-w-[180px]">
               <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
               <input type="text" id="input-busqueda" oninput="aplicarFiltros()" placeholder="Buscar por DNI o ID Triaje..." 
                 class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
@@ -200,6 +197,12 @@
               <option value="NARANJA">🟠 Solo Naranja</option>
               <option value="AMARILLO">🟡 Solo Amarillo</option>
               <option value="VERDE">🟢 Solo Verde</option>
+            </select>
+
+            <!-- NUEVO: SELECTOR DE ORDENAMIENTO -->
+            <select id="criterio-orden" onchange="aplicarFiltros()" class="py-1.5 px-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-900">
+              <option value="ESI">🚨 Prioridad Clínica (Rojo primero)</option>
+              <option value="RECIENTE">⏱️ Por Hora de Llegada (Más recientes arriba)</option>
             </select>
           </div>
 
@@ -215,7 +218,7 @@
           </div>
         </div>
 
-        <!-- BANDEJA DE CASOS CON BORDES COLOREADOS SEGÚN GRAVEDAD -->
+        <!-- BANDEJA DE CASOS -->
         <div id="contenedor-casos" class="space-y-4"></div>
       </section>
 
@@ -243,7 +246,6 @@
         </div>
 
         <div id="expediente-resultado" class="hidden space-y-4">
-          <!-- FICHA BASAL -->
           <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-2">
               <div>
@@ -285,7 +287,6 @@
             </div>
           </div>
 
-          <!-- LÍNEA DE TIEMPO CLÍNICA -->
           <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
             <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="history" class="w-4 h-4 text-teal-600"></i>
@@ -312,7 +313,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- GRÁFICO 1: TOP PATOLOGÍAS RECURRENTES -->
           <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
             <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Top Diagnósticos / Sospechas IA</h3>
             <div class="h-64 relative flex items-center justify-center">
@@ -320,7 +320,6 @@
             </div>
           </div>
 
-          <!-- GRÁFICO 2: DISTRIBUCIÓN DE SEVERIDAD ESI -->
           <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
             <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Distribución por Severidad ESI</h3>
             <div class="h-64 relative flex items-center justify-center">
@@ -371,7 +370,6 @@
           <p id="modal-justificacion" class="text-slate-600 leading-snug mt-1 italic"></p>
         </div>
 
-        <!-- FOTO -->
         <div id="modal-foto-box" class="hidden space-y-1.5">
           <p class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Foto de la Lesión:</p>
           <div class="border rounded-2xl p-2 bg-slate-50 text-center">
@@ -379,7 +377,6 @@
           </div>
         </div>
 
-        <!-- GPS -->
         <div id="modal-gps-box" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <i data-lucide="map-pin" class="w-5 h-5 text-rose-600 animate-bounce"></i>
@@ -394,7 +391,6 @@
           </a>
         </div>
 
-        <!-- FORMULARIO DE ACCIÓN DE ENFERMERÍA -->
         <form onsubmit="handleValidarDerivacion(event)" class="pt-3 border-t border-slate-200 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -428,7 +424,6 @@
               class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-teal-500"></textarea>
           </div>
 
-          <!-- BOTONERA DE ACCIÓN: DERIVACIÓN O DESPACHO DE AMBULANCIA -->
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
             <button type="button" onclick="abrirModalDespachoAmbulancia()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-md transition">
               <i data-lucide="siren" class="w-4 h-4 animate-bounce"></i>
@@ -508,7 +503,6 @@
       else mostrarLogin();
     });
 
-    // ALERTA SONORA NATIVA (WEB AUDIO API) PARA CÓDIGOS ROJOS EN GUARDIA
     function reproducirAlertaEmergencia() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -650,8 +644,7 @@
       try {
         const res = await callBackend({ action: "obtener_triajes_pendientes" });
         if (res.success && res.triajes) {
-          const jerarquia = { "ROJO": 1, "NARANJA": 2, "AMARILLO": 3, "VERDE": 4 };
-          todosLosCasos = res.triajes.sort((a, b) => (jerarquia[a.severidad] || 99) - (jerarquia[b.severidad] || 99));
+          todosLosCasos = res.triajes;
 
           if (todosLosCasos.some(c => c.severidad === "ROJO")) reproducirAlertaEmergencia();
           actualizarContadores();
@@ -671,16 +664,42 @@
       document.getElementById("stat-verdes").innerText = todosLosCasos.filter(c => c.severidad === "VERDE").length;
     }
 
+    function filtrarPorMetrica(tipo) {
+      const selectFiltro = document.getElementById("filtro-severidad");
+      if (tipo === "NARANJA") {
+        selectFiltro.value = "AMARILLO";
+      } else {
+        selectFiltro.value = tipo;
+      }
+      aplicarFiltros();
+    }
+
     function aplicarFiltros() {
       const q = (document.getElementById("input-busqueda").value || "").toLowerCase().trim();
       const filtroSev = document.getElementById("filtro-severidad").value;
+      const criterioOrden = document.getElementById("criterio-orden").value;
       const contenedor = document.getElementById("contenedor-casos");
 
-      const filtrados = todosLosCasos.filter(item => {
+      // 1. Filtrado
+      let filtrados = todosLosCasos.filter(item => {
         const matchTexto = String(item.dni).includes(q) || String(item.idTriaje).toLowerCase().includes(q) || String(item.sintomas).toLowerCase().includes(q);
         const matchSev = (filtroSev === "TODOS") || (item.severidad === filtroSev);
         return matchTexto && matchSev;
       });
+
+      // 2. Ordenamiento configurable
+      const jerarquia = { "ROJO": 1, "NARANJA": 2, "AMARILLO": 3, "VERDE": 4 };
+      if (criterioOrden === "ESI") {
+        // Orden por Severidad, pero dentro del mismo color, el MÁS RECIENTE ARRIBA (mayor número de fila)
+        filtrados.sort((a, b) => {
+          const diffSev = (jerarquia[a.severidad] || 99) - (jerarquia[b.severidad] || 99);
+          if (diffSev !== 0) return diffSev;
+          return Number(b.fila) - Number(a.fila);
+        });
+      } else {
+        // Orden estrictamente cronológico: los más recientes arriba
+        filtrados.sort((a, b) => Number(b.fila) - Number(a.fila));
+      }
 
       if (filtrados.length === 0) {
         contenedor.innerHTML = `<div class="bg-white border rounded-3xl p-12 text-center text-slate-400 text-xs">No hay consultas pendientes con los filtros aplicados.</div>`;
@@ -688,14 +707,15 @@
       }
 
       contenedor.innerHTML = "";
+      const filaMaxima = Math.max(...todosLosCasos.map(c => Number(c.fila) || 0));
+
       filtrados.forEach(c => {
         const card = document.createElement("div");
         const tieneGPS = c.ubicacionGPS && c.ubicacionGPS.startsWith("http");
         const ambulanciaDespachada = c.estado === "AMBULANCIA_DESPACHADA";
+        const esElMasReciente = (Number(c.fila) === filaMaxima);
 
-        // ========================================================
-        // ASIGNACIÓN EXACTA DE BORDES Y FONDOS SEGÚN SEVERIDAD ESI
-        // ========================================================
+        // BORDES Y COLORES SEGÚN SEVERIDAD ESI
         let borderClass = "border-slate-200 bg-white";
         let badgeColor = "bg-slate-100 text-slate-800 border-slate-300";
 
@@ -713,7 +733,7 @@
           badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-300";
         }
 
-        card.className = `border-2 ${borderClass} rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 transition duration-150`;
+        card.className = `border-2 ${borderClass} rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 transition duration-150 relative`;
 
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -723,6 +743,7 @@
               </span>
               <span class="font-mono text-xs font-bold text-slate-700">${c.idTriaje}</span>
               <span class="text-xs font-bold text-slate-900">• DNI: ${c.dni}</span>
+              ${esElMasReciente ? `<span class="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse shadow-sm">✨ RECIÉN INGRESADO</span>` : ''}
               ${ambulanciaDespachada ? `<span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-pulse flex items-center space-x-1 shadow-sm"><i data-lucide="siren" class="w-3 h-3"></i><span>AMBULANCIA EN RUTA</span></span>` : ''}
             </div>
             <div class="flex items-center space-x-3 text-xs text-slate-500">
@@ -781,9 +802,7 @@
       autoRefreshInterval = setInterval(cargarBandejaTriajes, 20000);
     }
 
-    // ==============================================
-    // GESTIÓN Y DERIVACIÓN MÉDICA
-    // ==============================================
+    // GESTIÓN Y DERIVACIÓN
     function abrirModalGestion(idTriaje) {
       const caso = todosLosCasos.find(c => c.idTriaje === idTriaje);
       if (!caso) return;
@@ -798,14 +817,12 @@
       document.getElementById("modal-sospecha").innerText = caso.sospecha || "En evaluación";
       document.getElementById("modal-justificacion").innerText = `"${caso.justificacion || 'Sin justificación técnica adicional.'}"`;
 
-      // Indicador de color en el modal
       const badgeDot = document.getElementById("modal-badge-severidad");
       if (caso.severidad === "ROJO") badgeDot.className = "w-3 h-3 rounded-full bg-rose-600 animate-ping";
       else if (caso.severidad === "NARANJA") badgeDot.className = "w-3 h-3 rounded-full bg-orange-500";
       else if (caso.severidad === "AMARILLO") badgeDot.className = "w-3 h-3 rounded-full bg-amber-400";
       else badgeDot.className = "w-3 h-3 rounded-full bg-emerald-500";
 
-      // Foto
       const boxFoto = document.getElementById("modal-foto-box");
       const imgLesion = document.getElementById("modal-img-lesion");
       if (caso.urlFoto && caso.urlFoto.startsWith("http")) {
@@ -815,7 +832,6 @@
         boxFoto.classList.add("hidden");
       }
 
-      // GPS
       const boxGPS = document.getElementById("modal-gps-box");
       const btnGPS = document.getElementById("modal-gps-btn");
       if (caso.ubicacionGPS && caso.ubicacionGPS.startsWith("http")) {
@@ -825,7 +841,6 @@
         boxGPS.classList.add("hidden");
       }
 
-      // Especialidad
       const selectEsp = document.getElementById("form-especialidad");
       for (let i = 0; i < selectEsp.options.length; i++) {
         if (selectEsp.options[i].value.toLowerCase() === (caso.especialidadSugerida || "").toLowerCase()) {
@@ -882,9 +897,7 @@
       }
     }
 
-    // ==============================================
     // DESPACHO DE AMBULANCIA
-    // ==============================================
     function abrirModalDespachoAmbulancia() {
       document.getElementById("modal-ambulancia").classList.remove("hidden");
       lucide.createIcons();
@@ -927,9 +940,7 @@
       }
     }
 
-    // ==============================================
-    // EXPEDIENTE CLÍNICO 360° POR DNI
-    // ==============================================
+    // EXPEDIENTE 360° POR DNI
     function auditarDniDirecto(dni) {
       cambiarSeccion("sec-expediente");
       document.getElementById("exp-search-dni").value = dni;
@@ -998,16 +1009,13 @@
       }
     }
 
-    // ==============================================
-    // DASHBOARD EPIDEMIOLÓGICO Y ANALÍTICA (CHART.JS)
-    // ==============================================
+    // DASHBOARD EPIDEMIOLÓGICO
     async function cargarMetricasEpidemiologicas() {
       try {
         const res = await callBackend({ action: "obtener_metricas_dashboard" });
         if (res.success && res.metricas) {
           const m = res.metricas;
 
-          // 1. Chart Patologías Recurrentes
           const ctxPat = document.getElementById("chart-patologias").getContext("2d");
           if (chartPatologiasInstancia) chartPatologiasInstancia.destroy();
           chartPatologiasInstancia = new Chart(ctxPat, {
@@ -1029,7 +1037,6 @@
             }
           });
 
-          // 2. Chart Distribución Severidad ESI
           const ctxSev = document.getElementById("chart-severidades").getContext("2d");
           if (chartSeveridadesInstancia) chartSeveridadesInstancia.destroy();
           chartSeveridadesInstancia = new Chart(ctxSev, {
