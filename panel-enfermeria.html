@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SaludConecta - Panel de Enfermería y Triaje Hospitalario</title>
+  <title>SaludConecta - Consola Central de Enfermería y Triaje</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js para analítica epidemiológica -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @keyframes pulse-emergency {
-      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 15px rgba(225, 29, 72, 0.4); }
-      50% { border-color: rgba(244, 63, 94, 0.4); box-shadow: 0 0 5px rgba(225, 29, 72, 0.1); }
+      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 16px rgba(225, 29, 72, 0.45); }
+      50% { border-color: rgba(244, 63, 94, 0.4); box-shadow: 0 0 6px rgba(225, 29, 72, 0.1); }
     }
-    .badge-rojo-pulse {
-      animation: pulse-emergency 1.8s infinite ease-in-out;
-    }
-    /* Estilización del scroll */
+    .badge-rojo-pulse { animation: pulse-emergency 1.8s infinite ease-in-out; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -24,13 +23,13 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
 
   <script>
-    // URL DE TU BACKEND APPS SCRIPT:
+    // URL DE TU DESPLIEGUE ACTIVO EN APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec";
   </script>
 
-  <!-- ======================================================== -->
-  <!-- VISTA 1: LOGIN ENFERMERÍA                               -->
-  <!-- ======================================================== -->
+  <!-- ============================================== -->
+  <!-- VISTA 1: LOGIN DE ENFERMERÍA                   -->
+  <!-- ============================================== -->
   <section id="view-login" class="flex-1 flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-8 space-y-6">
       
@@ -39,7 +38,7 @@
           <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
         </div>
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Estación de Enfermería</h1>
-        <p class="text-xs text-slate-500 font-medium">Validación Clínica, Derivación y Despacho de Emergencias</p>
+        <p class="text-xs text-slate-500 font-medium">Validación Clínica, Derivación y Despacho de Ambulancias</p>
       </div>
 
       <div id="login-alert" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center space-x-2"></div>
@@ -75,7 +74,7 @@
         </button>
       </div>
 
-      <!-- FORMULARIO DESPLEGABLE REGISTRO INICIAL (OPCIONAL) -->
+      <!-- FORMULARIO DE REGISTRO INICIAL (OPCIONAL) -->
       <form id="form-registro-enfermera" onsubmit="handleNurseRegister(event)" class="hidden pt-4 border-t border-slate-200 space-y-3 text-xs">
         <p class="font-bold text-slate-800">Alta de Personal Colegiado</p>
         <input type="text" id="reg-nurse-nombre" placeholder="Nombre Completo (ej. Lic. Rosa García)" required class="w-full p-2 bg-slate-50 border rounded-lg">
@@ -90,12 +89,11 @@
     </div>
   </section>
 
-  <!-- ======================================================== -->
-  <!-- VISTA 2: PANEL DE CONTROL PRINCIPAL                      -->
-  <!-- ======================================================== -->
+  <!-- ============================================== -->
+  <!-- VISTA 2: DASHBOARD CENTRAL                     -->
+  <!-- ============================================== -->
   <div id="view-dashboard" class="hidden flex-1 flex flex-col">
-
-    <!-- BARRA SUPERIOR INSTITUCIONAL -->
+    <!-- BARRA SUPERIOR -->
     <header class="bg-slate-900 text-white border-b border-slate-800 px-6 py-3.5 sticky top-0 z-30 shadow-md flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <div class="w-9 h-9 bg-teal-500/20 border border-teal-500/40 rounded-xl flex items-center justify-center">
@@ -104,13 +102,29 @@
         <div>
           <div class="flex items-center space-x-2">
             <h1 class="text-sm font-extrabold tracking-tight">SaludConecta</h1>
-            <span class="text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-md uppercase">Triaje ESI</span>
+            <span class="text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-md uppercase">Consola Hospitalaria</span>
           </div>
-          <p class="text-[11px] text-slate-400">Consola Central de Derivación Hospitalaria</p>
+          <p class="text-[11px] text-slate-400">Piso de Emergencias, Despacho y Triaje ESI</p>
         </div>
       </div>
 
-      <!-- DATOS DE LA ENFERMERA DE GUARDIA -->
+      <!-- NAVEGADOR DE PESTAÑAS -->
+      <nav class="hidden md:flex items-center bg-slate-800/80 p-1 rounded-2xl border border-slate-700 text-xs font-bold">
+        <button onclick="cambiarSeccion('sec-triaje')" id="nav-sec-triaje" class="px-3.5 py-1.5 rounded-xl bg-teal-600 text-white transition flex items-center space-x-1.5">
+          <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+          <span>Cola de Triaje</span>
+        </button>
+        <button onclick="cambiarSeccion('sec-expediente')" id="nav-sec-expediente" class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+          <i data-lucide="folder-search" class="w-3.5 h-3.5"></i>
+          <span>Expediente 360° (DNI)</span>
+        </button>
+        <button onclick="cambiarSeccion('sec-metricas')" id="nav-sec-metricas" class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+          <span>Epidemiología & Analítica</span>
+        </button>
+      </nav>
+
+      <!-- DATOS DE ENFERMERÍA Y LOGOUT -->
       <div class="flex items-center space-x-4">
         <div class="text-right hidden sm:block">
           <p id="nurse-display-name" class="text-xs font-bold text-white">Lic. de Guardia</p>
@@ -122,100 +136,209 @@
       </div>
     </header>
 
-    <!-- CUERPO PRINCIPAL CON METRICAS Y BANDEJA -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-      <!-- TARJETAS DE MÉTRICAS RÁPIDAS -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <!-- ============================================== -->
+      <!-- SECCIÓN 1: COLA DE TRIAJE EN TIEMPO REAL       -->
+      <!-- ============================================== -->
+      <section id="sec-triaje" class="space-y-6">
+        <!-- MÉTRICAS SUPERIORES -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendientes</p>
+              <h3 id="stat-pendientes" class="text-2xl font-black text-slate-800 mt-0.5">0</h3>
+            </div>
+            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+              <i data-lucide="inbox" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-rose-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider">Críticos (Rojo)</p>
+              <h3 id="stat-rojos" class="text-2xl font-black text-rose-600 mt-0.5">0</h3>
+            </div>
+            <div class="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+              <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Urgentes (Naran/Amar)</p>
+              <h3 id="stat-urgentes" class="text-2xl font-black text-amber-600 mt-0.5">0</h3>
+            </div>
+            <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Leves (Verde)</p>
+              <h3 id="stat-verdes" class="text-2xl font-black text-emerald-600 mt-0.5">0</h3>
+            </div>
+            <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILTROS Y CONTROLES -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-2 flex-1">
+            <div class="relative flex-1 max-w-sm">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+              <input type="text" id="input-busqueda" oninput="aplicarFiltros()" placeholder="Buscar por DNI o ID Triaje..." 
+                class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            </div>
+
+            <select id="filtro-severidad" onchange="aplicarFiltros()" class="py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+              <option value="TODOS">Todas las Gravedades</option>
+              <option value="ROJO">🔴 Solo Código Rojo</option>
+              <option value="NARANJA">🟠 Solo Naranja</option>
+              <option value="AMARILLO">🟡 Solo Amarillo</option>
+              <option value="VERDE">🟢 Solo Verde</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-2 justify-end">
+            <label class="flex items-center space-x-1.5 text-xs text-slate-600 cursor-pointer select-none">
+              <input type="checkbox" id="check-autorefresh" checked onchange="toggleAutoRefresh()" class="rounded text-teal-600">
+              <span>Auto-refresh (20s)</span>
+            </label>
+            <button onclick="cargarBandejaTriajes()" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-refresh"></i>
+              <span>Actualizar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BANDEJA DE CASOS -->
+        <div id="contenedor-casos" class="space-y-4"></div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SECCIÓN 2: EXPEDIENTE CLÍNICO 360° POR DNI     -->
+      <!-- ============================================== -->
+      <section id="sec-expediente" class="hidden space-y-6">
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
           <div>
-            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendientes</p>
-            <h3 id="stat-pendientes" class="text-2xl font-black text-slate-800 mt-0.5">0</h3>
+            <h2 class="text-base font-extrabold text-slate-900">Buscador Universal de Ficha Médica</h2>
+            <p class="text-xs text-slate-500">Consulta los antecedentes basales, patologías, alergias y línea de tiempo de atenciones del paciente.</p>
           </div>
-          <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
-            <i data-lucide="inbox" class="w-5 h-5"></i>
-          </div>
+
+          <form onsubmit="handleBuscarExpediente(event)" class="flex items-center space-x-2 max-w-md">
+            <div class="relative flex-1">
+              <i data-lucide="id-card" class="w-5 h-5 text-slate-400 absolute left-3 top-2.5"></i>
+              <input type="text" id="exp-search-dni" required pattern="[0-9]{8,12}" placeholder="Ingresa DNI a auditar" 
+                class="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-teal-500">
+            </div>
+            <button type="submit" id="btn-search-exp" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1 transition shadow-sm">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Consultar</span>
+            </button>
+          </form>
         </div>
 
-        <div class="bg-white border border-rose-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+        <div id="expediente-resultado" class="hidden space-y-4">
+          <!-- FICHA BASAL -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-2">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">Ficha Basal Activa</span>
+                <h3 id="exp-nombre" class="text-lg font-black text-slate-900 mt-1">Nombre del Paciente</h3>
+                <p class="text-xs text-slate-500">DNI: <span id="exp-dni" class="font-bold text-slate-700"></span> • Sexo: <span id="exp-sexo" class="font-bold text-slate-700"></span> • Edad: <span id="exp-edad" class="font-bold text-slate-700"></span> años</p>
+              </div>
+              <div class="bg-rose-50 border border-rose-200 px-4 py-2 rounded-2xl flex items-center space-x-2">
+                <i data-lucide="heart" class="w-5 h-5 text-rose-500 fill-rose-500"></i>
+                <div>
+                  <span class="text-[10px] font-bold text-rose-600 uppercase">Pulso Basal</span>
+                  <p id="exp-bpm-basal" class="text-sm font-black text-rose-700">75 BPM</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                <strong class="text-slate-800 flex items-center space-x-1 mb-1">
+                  <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i>
+                  <span>Patologías Crónicas:</span>
+                </strong>
+                <p id="exp-cronicas" class="text-slate-600">Ninguna</p>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                <strong class="text-slate-800 flex items-center space-x-1 mb-1">
+                  <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500"></i>
+                  <span>Alergias Medicamentosas:</span>
+                </strong>
+                <p id="exp-alergias" class="text-slate-600">Ninguna</p>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                <strong class="text-slate-800 flex items-center space-x-1 mb-1">
+                  <i data-lucide="pill" class="w-4 h-4 text-indigo-500"></i>
+                  <span>Medicación Habitual:</span>
+                </strong>
+                <p id="exp-medicacion" class="text-slate-600">Ninguna</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- LÍNEA DE TIEMPO CLÍNICA -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+            <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="history" class="w-4 h-4 text-teal-600"></i>
+              <span>Historial & Línea de Tiempo de Consultas</span>
+            </h3>
+            <div id="exp-timeline" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SECCIÓN 3: DASHBOARD EPIDEMIOLÓGICO            -->
+      <!-- ============================================== -->
+      <section id="sec-metricas" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider">Críticos (Rojo)</p>
-            <h3 id="stat-rojos" class="text-2xl font-black text-rose-600 mt-0.5">0</h3>
+            <h2 class="text-base font-extrabold text-slate-900">Inteligencia Epidemiológica Hospitalaria</h2>
+            <p class="text-xs text-slate-500">Patologías recurrentes detectadas por Groq LLM y métricas de saturación asistencial.</p>
           </div>
-          <div class="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
-            <i data-lucide="alert-octagon" class="w-5 h-5"></i>
-          </div>
-        </div>
-
-        <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Urgentes (Naran/Amar)</p>
-            <h3 id="stat-urgentes" class="text-2xl font-black text-amber-600 mt-0.5">0</h3>
-          </div>
-          <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-          </div>
-        </div>
-
-        <div class="bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Leves (Verde)</p>
-            <h3 id="stat-verdes" class="text-2xl font-black text-emerald-600 mt-0.5">0</h3>
-          </div>
-          <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-            <i data-lucide="check-circle" class="w-5 h-5"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- BARRA DE ACCIÓN Y FILTROS -->
-      <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div class="flex items-center space-x-2 flex-1">
-          <div class="relative flex-1 max-w-sm">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="input-busqueda" oninput="aplicarFiltros()" placeholder="Buscar por DNI o ID Triaje..." 
-              class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
-          </div>
-
-          <select id="filtro-severidad" onchange="aplicarFiltros()" class="py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
-            <option value="TODOS">Todas las Gravedades</option>
-            <option value="ROJO">🔴 Solo Código Rojo</option>
-            <option value="NARANJA">🟠 Solo Naranja</option>
-            <option value="AMARILLO">🟡 Solo Amarillo</option>
-            <option value="VERDE">🟢 Solo Verde</option>
-          </select>
-        </div>
-
-        <div class="flex items-center space-x-2 justify-end">
-          <label class="flex items-center space-x-1.5 text-xs text-slate-600 cursor-pointer select-none">
-            <input type="checkbox" id="check-autorefresh" checked onchange="toggleAutoRefresh()" class="rounded text-teal-600 focus:ring-teal-500">
-            <span>Auto-actualizar (30s)</span>
-          </label>
-          <button onclick="cargarBandejaTriajes()" id="btn-recargar" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-refresh"></i>
-            <span>Actualizar</span>
+          <button onclick="cargarMetricasEpidemiologicas()" class="px-3 py-1.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center space-x-1 transition shadow-sm">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Recalcular</span>
           </button>
         </div>
-      </div>
 
-      <!-- BANDEJA DE CASOS PENDIENTES -->
-      <div id="contenedor-casos" class="space-y-4">
-        <div class="text-center py-16 text-slate-400 text-sm">
-          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-teal-600 mb-2"></i>
-          <p class="font-medium">Cargando cola de triaje en tiempo real...</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- GRÁFICO 1: TOP PATOLOGÍAS RECURRENTES -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Top Diagnósticos / Sospechas IA</h3>
+            <div class="h-64 relative flex items-center justify-center">
+              <canvas id="chart-patologias"></canvas>
+            </div>
+          </div>
+
+          <!-- GRÁFICO 2: DISTRIBUCIÓN DE SEVERIDAD ESI -->
+          <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Distribución por Severidad ESI</h3>
+            <div class="h-64 relative flex items-center justify-center">
+              <canvas id="chart-severidades"></canvas>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
     </main>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: GESTIÓN Y VALIDACIÓN DE DERIVACIÓN MÉDICA          -->
-  <!-- ======================================================== -->
+  <!-- ============================================== -->
+  <!-- MODAL: GESTIÓN DE DERIVACIÓN MÉDICA            -->
+  <!-- ============================================== -->
   <div id="modal-gestion" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
       
-      <!-- CABECERA MODAL -->
       <div class="bg-slate-900 text-white p-4 px-6 flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
           <div id="modal-badge-severidad" class="w-3 h-3 rounded-full bg-slate-400"></div>
@@ -226,36 +349,19 @@
         </button>
       </div>
 
-      <!-- CONTENIDO EXPEDIENTE -->
       <div class="p-6 overflow-y-auto space-y-5 text-xs">
-
-        <!-- RESUMEN CLÍNICO BASAL -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-          <div>
-            <span class="text-[10px] text-slate-400 font-bold uppercase">DNI Paciente</span>
-            <p id="modal-dni" class="font-bold text-slate-800 text-sm mt-0.5">--------</p>
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-400 font-bold uppercase">Pulso Capturado</span>
-            <p id="modal-bpm" class="font-bold text-rose-600 text-sm mt-0.5">-- BPM</p>
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-400 font-bold uppercase">Fecha y Hora</span>
-            <p id="modal-fecha" class="font-semibold text-slate-700 mt-0.5">--/--/--</p>
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-400 font-bold uppercase">Severidad IA</span>
-            <p id="modal-severidad-txt" class="font-extrabold text-sm mt-0.5">---</p>
-          </div>
+          <div><span class="text-[10px] text-slate-400 font-bold uppercase">DNI Paciente</span><p id="modal-dni" class="font-bold text-slate-800 text-sm mt-0.5">--------</p></div>
+          <div><span class="text-[10px] text-slate-400 font-bold uppercase">Pulso Capturado</span><p id="modal-bpm" class="font-bold text-rose-600 text-sm mt-0.5">-- BPM</p></div>
+          <div><span class="text-[10px] text-slate-400 font-bold uppercase">Fecha y Hora</span><p id="modal-fecha" class="font-semibold text-slate-700 mt-0.5">--/--/--</p></div>
+          <div><span class="text-[10px] text-slate-400 font-bold uppercase">Severidad IA</span><p id="modal-severidad-txt" class="font-extrabold text-sm mt-0.5">---</p></div>
         </div>
 
-        <!-- RELATO DE SÍNTOMAS Y ANAMNESIS -->
         <div class="space-y-1.5">
           <p class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Relato Clínico & Preguntas Respondidas:</p>
-          <div id="modal-sintomas" class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 leading-relaxed text-slate-700 font-normal"></div>
+          <div id="modal-sintomas" class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 leading-relaxed text-slate-700"></div>
         </div>
 
-        <!-- EVALUACIÓN Y JUSTIFICACIÓN DE GROQ -->
         <div class="bg-teal-50/60 border border-teal-200 rounded-2xl p-3.5 space-y-1">
           <p class="font-bold text-teal-900 text-[11px] flex items-center space-x-1.5">
             <i data-lucide="bot" class="w-3.5 h-3.5 text-teal-700"></i>
@@ -265,37 +371,31 @@
           <p id="modal-justificacion" class="text-slate-600 leading-snug mt-1 italic"></p>
         </div>
 
-        <!-- FOTO DE LA LESIÓN (SI APLICA) -->
+        <!-- FOTO -->
         <div id="modal-foto-box" class="hidden space-y-1.5">
-          <p class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Fotografía de Lesión Dérmica:</p>
+          <p class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Foto de la Lesión:</p>
           <div class="border rounded-2xl p-2 bg-slate-50 text-center">
             <img id="modal-img-lesion" class="max-h-48 mx-auto rounded-xl object-contain shadow-sm" alt="Lesión">
           </div>
         </div>
 
-        <!-- MAPA GPS SI ES EMERGENCIA -->
+        <!-- GPS -->
         <div id="modal-gps-box" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <i data-lucide="map-pin" class="w-5 h-5 text-rose-600 animate-bounce"></i>
             <div>
-              <p class="font-bold text-rose-800 text-xs">Ubicación GPS Satelital Transmitida</p>
-              <p class="text-[11px] text-rose-600">El paciente solicitó auxilio médico o ambulancia</p>
+              <p class="font-bold text-rose-800 text-xs">Ubicación GPS Satelital Vinculada</p>
+              <p class="text-[11px] text-rose-600">El paciente solicitó geolocalización de emergencia</p>
             </div>
           </div>
           <a id="modal-gps-btn" href="#" target="_blank" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1 shadow-sm transition">
-            <span>Abrir en Maps</span>
+            <span>Abrir Maps</span>
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
           </a>
         </div>
 
-        <!-- ============================================== -->
-        <!-- FORMULARIO DE ACCIÓN DE ENFERMERÍA             -->
-        <!-- ============================================== -->
-        <form id="form-accion-derivacion" onsubmit="handleValidarDerivacion(event)" class="pt-3 border-t border-slate-200 space-y-4">
-          <input type="hidden" id="form-fila">
-          <input type="hidden" id="form-ia-sugerida">
-          <input type="hidden" id="form-sintomas-orig">
-
+        <!-- FORMULARIO DE ACCIÓN DE ENFERMERÍA -->
+        <form onsubmit="handleValidarDerivacion(event)" class="pt-3 border-t border-slate-200 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-slate-700 font-bold mb-1">Especialidad de Destino</label>
@@ -313,30 +413,37 @@
                 <option value="Cirugía General">Cirugía General</option>
                 <option value="Emergencia Shock Trauma">🚨 Emergencia Shock Trauma</option>
               </select>
-              <p class="text-[10px] text-slate-400 mt-0.5">Si modificas la sugerencia de la IA, se registrará en la pestaña de feedback para optimizar el modelo.</p>
             </div>
 
             <div>
-              <label class="block text-slate-700 font-bold mb-1">Médico Asignado & Fecha / Horario</label>
-              <input type="text" id="form-medico-cita" required placeholder="Ej: Dr. Manuel Soto - Mañana 09:30 AM" 
+              <label class="block text-slate-700 font-bold mb-1">Médico Asignado & Horario</label>
+              <input type="text" id="form-medico-cita" required placeholder="Dr. Soto - Hoy 11:30 AM" 
                 class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-teal-500">
             </div>
           </div>
 
           <div>
-            <label class="block text-slate-700 font-bold mb-1">Indicaciones Clínicas / Receta Provisional / Cuidados al Paciente</label>
-            <textarea id="form-notas" rows="3" required placeholder="Escribe las instrucciones que verá el paciente en su app (ej: Ayuno de 6 horas, tomar paracetamol si supera 38°C, acudir a triaje presencial módulo 3)..." 
+            <label class="block text-slate-700 font-bold mb-1">Recomendaciones & Cuidados al Paciente</label>
+            <textarea id="form-notas" rows="3" required placeholder="Instrucciones para el paciente en su app..." 
               class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-teal-500"></textarea>
           </div>
 
-          <div class="flex items-center justify-end space-x-2 pt-2">
-            <button type="button" onclick="cerrarModalGestion()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-              Cancelar
+          <!-- BOTONERA DE ACCIÓN: DERIVACIÓN O DESPACHO DE AMBULANCIA -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+            <button type="button" onclick="abrirModalDespachoAmbulancia()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-md transition">
+              <i data-lucide="siren" class="w-4 h-4 animate-bounce"></i>
+              <span>🚨 Despachar Ambulancia</span>
             </button>
-            <button type="submit" id="btn-submit-derivacion" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center space-x-2">
-              <i data-lucide="check-check" class="w-4 h-4"></i>
-              <span>Validar y Notificar al Paciente</span>
-            </button>
+
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="cerrarModalGestion()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                Cancelar
+              </button>
+              <button type="submit" id="btn-submit-derivacion" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center space-x-1.5">
+                <i data-lucide="check-check" class="w-4 h-4"></i>
+                <span>Validar Derivación</span>
+              </button>
+            </div>
           </div>
         </form>
 
@@ -344,9 +451,48 @@
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- CONTROLADOR JAVASCRIPT DEL PANEL                         -->
-  <!-- ======================================================== -->
+  <!-- ============================================== -->
+  <!-- MODAL: CONFIRMAR DESPACHO DE AMBULANCIA        -->
+  <!-- ============================================== -->
+  <div id="modal-ambulancia" class="hidden fixed inset-0 bg-rose-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border-2 border-rose-500 space-y-4">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+          <i data-lucide="truck" class="w-7 h-7 animate-pulse"></i>
+        </div>
+        <h3 class="text-base font-black text-slate-900">Despachar Unidad de Emergencia</h3>
+        <p class="text-xs text-slate-500">El paciente recibirá una sirena acústica de ambulancia en camino.</p>
+      </div>
+
+      <form onsubmit="confirmarDespachoAmbulancia(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Unidad Móvil Asignada</label>
+          <input type="text" id="amb-unidad" required value="SAMU Alfa-03" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tiempo Estimado de Llegada (ETA)</label>
+          <input type="text" id="amb-eta" required value="10 a 15 minutos" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Instrucciones de Despacho</label>
+          <textarea id="amb-indicaciones" rows="2" class="w-full p-2.5 bg-slate-50 border rounded-xl">Mantener al paciente recostado, ventilación adecuada y despejar la puerta de ingreso.</textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="cerrarModalAmbulancia()" class="px-4 py-2 bg-slate-100 font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-confirm-amb" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition">
+            Confirmar y Enviar Sirena
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- CONTROLADOR JAVASCRIPT                         -->
+  <!-- ============================================== -->
   <script>
     lucide.createIcons();
 
@@ -354,39 +500,33 @@
     let todosLosCasos = [];
     let autoRefreshInterval = null;
     let casoEnEdicion = null;
+    let chartPatologiasInstancia = null;
+    let chartSeveridadesInstancia = null;
 
     window.addEventListener("DOMContentLoaded", () => {
-      if (currentNurse) {
-        mostrarDashboard();
-      } else {
-        mostrarLogin();
-      }
+      if (currentNurse) mostrarDashboard();
+      else mostrarLogin();
     });
 
-    // SONIDO DE ALERTA SINTETIZADO (Web Audio API) PARA CÓDIGOS ROJOS
+    // ALERTA SONORA NATIVA (WEB AUDIO API) PARA CÓDIGOS ROJOS EN GUARDIA
     function reproducirAlertaEmergencia() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // La5
-        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.4);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.35);
         gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.45);
-      } catch (e) {
-        // Audio deshabilitado por política de usuario
-      }
+        osc.stop(audioCtx.currentTime + 0.4);
+      } catch (e) {}
     }
 
     async function callBackend(payload) {
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("TU_URL")) {
-        throw new Error("Configura la variable APPS_SCRIPT_URL con el endpoint /exec de Apps Script.");
-      }
       const resp = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -396,9 +536,6 @@
       return JSON.parse(txt);
     }
 
-    // ----------------------------------------------------
-    // LOGIN & REGISTRO DE ENFERMERA
-    // ----------------------------------------------------
     function mostrarLogin() {
       document.getElementById("view-dashboard").classList.add("hidden");
       document.getElementById("view-login").classList.remove("hidden");
@@ -416,8 +553,19 @@
     }
 
     function toggleRegistroInicial() {
-      const f = document.getElementById("form-registro-enfermera");
-      f.classList.toggle("hidden");
+      document.getElementById("form-registro-enfermera").classList.toggle("hidden");
+    }
+
+    function cambiarSeccion(seccionId) {
+      ["sec-triaje", "sec-expediente", "sec-metricas"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+        document.getElementById("nav-" + id).className = "px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      });
+      document.getElementById(seccionId).classList.remove("hidden");
+      document.getElementById("nav-" + seccionId).className = "px-3.5 py-1.5 rounded-xl bg-teal-600 text-white transition flex items-center space-x-1.5";
+
+      if (seccionId === "sec-metricas") cargarMetricasEpidemiologicas();
+      lucide.createIcons();
     }
 
     async function handleNurseLogin(e) {
@@ -426,7 +574,7 @@
       const alertBox = document.getElementById("login-alert");
       alertBox.classList.add("hidden");
       btn.disabled = true;
-      btn.innerText = "Verificando credenciales...";
+      btn.innerText = "Accediendo...";
 
       try {
         const res = await callBackend({
@@ -441,7 +589,7 @@
           mostrarDashboard();
         } else {
           alertBox.className = "p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 bg-rose-50 text-rose-700 border border-rose-200";
-          alertBox.innerText = res.message || "Credenciales inválidas.";
+          alertBox.innerText = res.message || "Credenciales incorrectas.";
           alertBox.classList.remove("hidden");
         }
       } catch (err) {
@@ -470,7 +618,7 @@
           colegiatura: document.getElementById("reg-nurse-cep").value.trim()
         });
         if (res.success) {
-          alert("Personal registrado con éxito. Ahora inicia sesión con tus credenciales.");
+          alert("Personal registrado con éxito. Inicia sesión con tus credenciales.");
           toggleRegistroInicial();
         } else {
           alert("Aviso: " + res.message);
@@ -492,9 +640,9 @@
       }
     }
 
-    // ----------------------------------------------------
-    // BANDEJA DE TRIAJES Y GESTIÓN EN TIEMPO REAL
-    // ----------------------------------------------------
+    // ==============================================
+    // CARGA DE COLA DE TRIAJES (EN VIVO)
+    // ==============================================
     async function cargarBandejaTriajes() {
       const icon = document.getElementById("icon-refresh");
       icon.classList.add("animate-spin");
@@ -502,24 +650,15 @@
       try {
         const res = await callBackend({ action: "obtener_triajes_pendientes" });
         if (res.success && res.triajes) {
-          // Orden de severidad ESI / Manchester: ROJO > NARANJA > AMARILLO > VERDE
           const jerarquia = { "ROJO": 1, "NARANJA": 2, "AMARILLO": 3, "VERDE": 4 };
-          todosLosCasos = res.triajes.sort((a, b) => {
-            const pA = jerarquia[a.severidad] || 99;
-            const pB = jerarquia[b.severidad] || 99;
-            return pA - pB;
-          });
+          todosLosCasos = res.triajes.sort((a, b) => (jerarquia[a.severidad] || 99) - (jerarquia[b.severidad] || 99));
 
-          // Si hay algún código ROJO reciente, emitir sonido de emergencia
-          if (todosLosCasos.some(c => c.severidad === "ROJO")) {
-            reproducirAlertaEmergencia();
-          }
-
+          if (todosLosCasos.some(c => c.severidad === "ROJO")) reproducirAlertaEmergencia();
           actualizarContadores();
           aplicarFiltros();
         }
       } catch (err) {
-        console.error("Error al cargar triajes:", err);
+        console.error("Error:", err);
       } finally {
         icon.classList.remove("animate-spin");
       }
@@ -544,14 +683,7 @@
       });
 
       if (filtrados.length === 0) {
-        contenedor.innerHTML = `
-          <div class="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-400 space-y-2">
-            <i data-lucide="check-circle" class="w-10 h-10 mx-auto text-emerald-500"></i>
-            <h4 class="font-bold text-slate-700 text-sm">Bandeja al día</h4>
-            <p class="text-xs">No hay consultas de pacientes pendientes con los filtros actuales.</p>
-          </div>
-        `;
-        lucide.createIcons();
+        contenedor.innerHTML = `<div class="bg-white border rounded-3xl p-12 text-center text-slate-400 text-xs">No hay consultas pendientes con los filtros aplicados.</div>`;
         return;
       }
 
@@ -559,35 +691,24 @@
       filtrados.forEach(c => {
         const card = document.createElement("div");
         const esRojo = c.severidad === "ROJO";
-        const esUrgente = c.severidad === "NARANJA" || c.severidad === "AMARILLO";
-
-        let borderClass = "border-slate-200";
-        let badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
-        if (esRojo) {
-          borderClass = "border-rose-400 badge-rojo-pulse bg-rose-50/20";
-          badgeColor = "bg-rose-600 text-white border-rose-700";
-        } else if (esUrgente) {
-          borderClass = "border-amber-300 bg-amber-50/10";
-          badgeColor = "bg-amber-100 text-amber-900 border-amber-300";
-        }
-
-        card.className = `bg-white border-2 ${borderClass} rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 transition duration-150`;
-
         const tieneGPS = c.ubicacionGPS && c.ubicacionGPS.startsWith("http");
-        const tieneFoto = c.urlFoto && c.urlFoto.startsWith("http");
+        const ambulanciaDespachada = c.estado === "AMBULANCIA_DESPACHADA";
+
+        let borderClass = esRojo ? "border-rose-500 badge-rojo-pulse bg-rose-50/20" : "border-slate-200 bg-white";
+        card.className = `border-2 ${borderClass} rounded-2xl p-4 sm:p-5 shadow-sm space-y-3`;
 
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div class="flex items-center space-x-2">
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${badgeColor}">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${esRojo ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-800'}">
                 ${c.severidad}
               </span>
               <span class="font-mono text-xs font-bold text-slate-700">${c.idTriaje}</span>
-              <span class="text-slate-300">•</span>
-              <span class="text-xs font-bold text-slate-900">DNI: ${c.dni}</span>
+              <span class="text-xs font-bold text-slate-900">• DNI: ${c.dni}</span>
+              ${ambulanciaDespachada ? `<span class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-md animate-pulse">🚑 AMBULANCIA EN CAMINO</span>` : ''}
             </div>
             <div class="flex items-center space-x-3 text-xs text-slate-500">
-              <span class="flex items-center space-x-1 font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg">
+              <span class="font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg flex items-center space-x-1">
                 <i data-lucide="heart" class="w-3.5 h-3.5 fill-rose-500 text-rose-500"></i>
                 <span>${c.bpm} BPM</span>
               </span>
@@ -595,63 +716,52 @@
             </div>
           </div>
 
-          <div class="space-y-1.5 text-xs">
-            <div class="flex items-start space-x-2">
-              <strong class="text-slate-800 min-w-max">Molestia:</strong>
-              <p class="text-slate-600 line-clamp-2">${c.sintomas}</p>
-            </div>
-            <div class="flex items-start space-x-2">
-              <strong class="text-slate-800 min-w-max">Sospecha IA:</strong>
-              <p class="font-bold text-teal-800">${c.sospecha || "Evaluación Médica"}</p>
-            </div>
+          <div class="text-xs space-y-1">
+            <p><strong class="text-slate-800">Molestia:</strong> <span class="text-slate-600">${c.sintomas}</span></p>
+            <p><strong class="text-slate-800">Sospecha IA:</strong> <span class="font-bold text-teal-800">${c.sospecha || "Evaluación Médica"}</span></p>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
             <div class="flex items-center space-x-2">
-              <span class="text-[11px] font-bold text-slate-500">Sugerencia:</span>
-              <span class="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg">
+              <span class="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg">
                 ${c.especialidadSugerida || "Medicina General"}
               </span>
-              ${tieneFoto ? `<span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-bold">📷 Con Foto</span>` : ''}
-              ${tieneGPS ? `<a href="${c.ubicacionGPS}" target="_blank" class="text-[10px] bg-rose-100 text-rose-700 hover:bg-rose-200 px-2 py-0.5 rounded-md font-bold flex items-center space-x-1"><i data-lucide="map-pin" class="w-3 h-3"></i><span>GPS</span></a>` : ''}
+              ${tieneGPS ? `<a href="${c.ubicacionGPS}" target="_blank" class="text-[10px] bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-md flex items-center space-x-1"><i data-lucide="map-pin" class="w-3 h-3"></i><span>GPS</span></a>` : ''}
             </div>
 
-            <button onclick="abrirModalGestion('${c.idTriaje}')" class="px-4 py-2 bg-slate-900 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition shadow-sm">
-              <i data-lucide="clipboard-edit" class="w-3.5 h-3.5"></i>
-              <span>Gestionar y Derivar</span>
-            </button>
+            <div class="flex items-center space-x-2">
+              <button onclick="auditarDniDirecto('${c.dni}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center space-x-1">
+                <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                <span>Ver Historial</span>
+              </button>
+              <button onclick="abrirModalGestion('${c.idTriaje}')" class="px-4 py-1.5 bg-slate-900 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition">
+                <i data-lucide="clipboard-edit" class="w-3.5 h-3.5"></i>
+                <span>Gestionar & Derivar</span>
+              </button>
+            </div>
           </div>
         `;
-
         contenedor.appendChild(card);
       });
-
       lucide.createIcons();
     }
 
     function toggleAutoRefresh() {
-      const checked = document.getElementById("check-autorefresh").checked;
-      if (checked) {
-        iniciarAutoRefresh();
-      } else {
-        clearInterval(autoRefreshInterval);
-      }
+      if (document.getElementById("check-autorefresh").checked) iniciarAutoRefresh();
+      else clearInterval(autoRefreshInterval);
     }
 
     function iniciarAutoRefresh() {
       clearInterval(autoRefreshInterval);
-      autoRefreshInterval = setInterval(() => {
-        cargarBandejaTriajes();
-      }, 30000); // 30 segundos
+      autoRefreshInterval = setInterval(cargarBandejaTriajes, 20000);
     }
 
-    // ----------------------------------------------------
-    // MODAL DE VALIDACIÓN Y DERIVACIÓN
-    // ----------------------------------------------------
+    // ==============================================
+    // GESTIÓN Y DERIVACIÓN MÉDICA
+    // ==============================================
     function abrirModalGestion(idTriaje) {
       const caso = todosLosCasos.find(c => c.idTriaje === idTriaje);
       if (!caso) return;
-
       casoEnEdicion = caso;
 
       document.getElementById("modal-titulo").innerText = `Expediente Clínico #${caso.idTriaje}`;
@@ -659,14 +769,8 @@
       document.getElementById("modal-bpm").innerText = `${caso.bpm} BPM`;
       document.getElementById("modal-fecha").innerText = caso.fecha;
       document.getElementById("modal-severidad-txt").innerText = caso.severidad;
-      
-      const badgeDot = document.getElementById("modal-badge-severidad");
-      if (caso.severidad === "ROJO") badgeDot.className = "w-3 h-3 rounded-full bg-rose-600 animate-ping";
-      else if (caso.severidad === "NARANJA" || caso.severidad === "AMARILLO") badgeDot.className = "w-3 h-3 rounded-full bg-amber-500";
-      else badgeDot.className = "w-3 h-3 rounded-full bg-emerald-500";
-
       document.getElementById("modal-sintomas").innerText = caso.sintomas;
-      document.getElementById("modal-sospecha").innerText = caso.sospecha || "En evaluación presuntiva";
+      document.getElementById("modal-sospecha").innerText = caso.sospecha || "En evaluación";
       document.getElementById("modal-justificacion").innerText = `"${caso.justificacion || 'Sin justificación técnica adicional.'}"`;
 
       // Foto
@@ -689,26 +793,16 @@
         boxGPS.classList.add("hidden");
       }
 
-      // Rellenar formulario
-      document.getElementById("form-fila").value = caso.fila;
-      document.getElementById("form-ia-sugerida").value = caso.especialidadSugerida || "Medicina General";
-      document.getElementById("form-sintomas-orig").value = caso.sintomas;
-      
-      // Auto-seleccionar especialidad sugerida por IA en el select si existe
+      // Especialidad
       const selectEsp = document.getElementById("form-especialidad");
-      let encontrada = false;
       for (let i = 0; i < selectEsp.options.length; i++) {
         if (selectEsp.options[i].value.toLowerCase() === (caso.especialidadSugerida || "").toLowerCase()) {
-          selectEsp.selectedIndex = i;
-          encontrada = true;
-          break;
+          selectEsp.selectedIndex = i; break;
         }
       }
-      if (!encontrada) selectEsp.value = "Medicina General";
 
       document.getElementById("form-medico-cita").value = "";
       document.getElementById("form-notas").value = "";
-
       document.getElementById("modal-gestion").classList.remove("hidden");
       lucide.createIcons();
     }
@@ -724,21 +818,20 @@
 
       const btn = document.getElementById("btn-submit-derivacion");
       btn.disabled = true;
-      btn.innerText = "Registrando derivación en sistema...";
+      btn.innerText = "Derivando...";
 
-      const especialidadSeleccionada = document.getElementById("form-especialidad").value;
-      const citaMedico = document.getElementById("form-medico-cita").value.trim();
+      const especialidad = document.getElementById("form-especialidad").value;
+      const medico = document.getElementById("form-medico-cita").value.trim();
       const notas = document.getElementById("form-notas").value.trim();
-      const notasConsolidadas = `Cita: ${citaMedico} | Indicaciones: ${notas}`;
 
       const payload = {
         action: "validar_derivacion",
         fila: casoEnEdicion.fila,
         nombreEnfermera: `${currentNurse.nombre} (${currentNurse.colegiatura || 'CEP'})`,
-        especialidadFinal: especialidadSeleccionada,
+        especialidadFinal: especialidad,
         especialidadSugeridaIA: casoEnEdicion.especialidadSugerida,
         sintomasOriginales: casoEnEdicion.sintomas,
-        notasClinicas: notasConsolidadas
+        notasClinicas: `Cita asignada: ${medico} | Indicaciones: ${notas}`
       };
 
       try {
@@ -746,16 +839,193 @@
         if (res.success) {
           cerrarModalGestion();
           await cargarBandejaTriajes();
-          alert("✅ Caso derivado con éxito. El paciente ya puede ver su cita y receta en su teléfono.");
-        } else {
-          alert("Error: " + (res.message || "No se pudo actualizar el registro."));
+          alert("✅ Paciente derivado. Su app ha recibido la orden médica y el sonido de confirmación.");
         }
       } catch (err) {
-        alert("Error de conexión: " + err.message);
+        alert("Error: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="check-check" class="w-4 h-4"></i><span>Validar y Notificar al Paciente</span>`;
+        btn.innerHTML = `<i data-lucide="check-check" class="w-4 h-4"></i><span>Validar Derivación</span>`;
         lucide.createIcons();
+      }
+    }
+
+    // ==============================================
+    // DESPACHO DE AMBULANCIA
+    // ==============================================
+    function abrirModalDespachoAmbulancia() {
+      document.getElementById("modal-ambulancia").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function cerrarModalAmbulancia() {
+      document.getElementById("modal-ambulancia").classList.add("hidden");
+    }
+
+    async function confirmarDespachoAmbulancia(e) {
+      e.preventDefault();
+      if (!casoEnEdicion) return;
+
+      const btn = document.getElementById("btn-confirm-amb");
+      btn.disabled = true;
+      btn.innerText = "Despachando...";
+
+      const payload = {
+        action: "despachar_ambulancia",
+        fila: casoEnEdicion.fila,
+        nombreEnfermera: `${currentNurse.nombre} (${currentNurse.colegiatura || 'CEP'})`,
+        unidad: document.getElementById("amb-unidad").value.trim(),
+        eta: document.getElementById("amb-eta").value.trim(),
+        indicaciones: document.getElementById("amb-indicaciones").value.trim()
+      };
+
+      try {
+        const res = await callBackend(payload);
+        if (res.success) {
+          cerrarModalAmbulancia();
+          cerrarModalGestion();
+          await cargarBandejaTriajes();
+          alert("🚨 ¡Ambulancia despachada! La sirena de emergencia ha sonado en el dispositivo del paciente.");
+        }
+      } catch (err) {
+        alert("Error de despacho: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Confirmar y Enviar Sirena";
+      }
+    }
+
+    // ==============================================
+    // EXPEDIENTE CLÍNICO 360° POR DNI
+    // ==============================================
+    function auditarDniDirecto(dni) {
+      cambiarSeccion("sec-expediente");
+      document.getElementById("exp-search-dni").value = dni;
+      cargarExpediente(dni);
+    }
+
+    function handleBuscarExpediente(e) {
+      e.preventDefault();
+      const dni = document.getElementById("exp-search-dni").value.trim();
+      cargarExpediente(dni);
+    }
+
+    async function cargarExpediente(dni) {
+      const btn = document.getElementById("btn-search-exp");
+      btn.disabled = true;
+      btn.innerText = "Buscando...";
+
+      try {
+        const res = await callBackend({ action: "obtener_expediente_paciente", dni: dni });
+        if (res.success) {
+          const pac = res.paciente;
+          document.getElementById("exp-nombre").innerText = pac.nombre;
+          document.getElementById("exp-dni").innerText = pac.dni;
+          document.getElementById("exp-sexo").innerText = pac.sexo;
+          document.getElementById("exp-edad").innerText = pac.edad;
+          document.getElementById("exp-bpm-basal").innerText = (pac.bpmBasal || 75) + " BPM";
+          document.getElementById("exp-cronicas").innerText = pac.enfermedadesCronicas || "Ninguna";
+          document.getElementById("exp-alergias").innerText = pac.alergias || "Ninguna";
+          document.getElementById("exp-medicacion").innerText = pac.medicacionHabitual || "Ninguna";
+
+          const timelineBox = document.getElementById("exp-timeline");
+          timelineBox.innerHTML = "";
+
+          if (res.historial.length === 0) {
+            timelineBox.innerHTML = "<p class='text-xs text-slate-400'>Sin consultas previas registradas.</p>";
+          } else {
+            res.historial.forEach(h => {
+              const item = document.createElement("div");
+              item.className = "border-l-2 border-teal-500 pl-4 py-2 space-y-1 relative";
+              item.innerHTML = `
+                <div class="absolute -left-1.5 top-3 w-3 h-3 bg-teal-500 rounded-full"></div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-[10px] font-mono text-slate-400">${h.fecha}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${h.severidad === 'ROJO' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100'}">${h.severidad}</span>
+                  <span class="text-xs font-bold text-slate-800">${h.sospecha || 'Consulta'}</span>
+                </div>
+                <p class="text-xs text-slate-600"><strong>Síntomas:</strong> ${h.sintomas}</p>
+                <p class="text-xs text-teal-700"><strong>Derivación / Médico:</strong> ${h.especialidadFinal} (${h.enfermera || 'Guardia'})</p>
+                <p class="text-[11px] text-slate-500 italic">"${h.notas}"</p>
+              `;
+              timelineBox.appendChild(item);
+            });
+          }
+
+          document.getElementById("expediente-resultado").classList.remove("hidden");
+          lucide.createIcons();
+        } else {
+          alert(res.message);
+        }
+      } catch (err) {
+        alert("Error al cargar expediente: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="search" class="w-4 h-4"></i><span>Consultar</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    // ==============================================
+    // DASHBOARD EPIDEMIOLÓGICO Y ANALÍTICA (CHART.JS)
+    // ==============================================
+    async function cargarMetricasEpidemiologicas() {
+      try {
+        const res = await callBackend({ action: "obtener_metricas_dashboard" });
+        if (res.success && res.metricas) {
+          const m = res.metricas;
+
+          // 1. Chart Patologías Recurrentes
+          const ctxPat = document.getElementById("chart-patologias").getContext("2d");
+          if (chartPatologiasInstancia) chartPatologiasInstancia.destroy();
+          chartPatologiasInstancia = new Chart(ctxPat, {
+            type: "bar",
+            data: {
+              labels: m.topPatologias.map(p => p.patologia.substring(0, 24) + (p.patologia.length > 24 ? "..." : "")),
+              datasets: [{
+                label: "Casos Detectados",
+                data: m.topPatologias.map(p => p.cantidad),
+                backgroundColor: "#0d9488",
+                borderRadius: 8
+              }]
+            },
+            options: {
+              indexAxis: "y",
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } }
+            }
+          });
+
+          // 2. Chart Distribución Severidad ESI
+          const ctxSev = document.getElementById("chart-severidades").getContext("2d");
+          if (chartSeveridadesInstancia) chartSeveridadesInstancia.destroy();
+          chartSeveridadesInstancia = new Chart(ctxSev, {
+            type: "doughnut",
+            data: {
+              labels: ["Rojo (Emergencia)", "Naranja (Urgente)", "Amarillo (Prioritario)", "Verde (Leve)"],
+              datasets: [{
+                data: [
+                  m.severidades.ROJO || 0,
+                  m.severidades.NARANJA || 0,
+                  m.severidades.AMARILLO || 0,
+                  m.severidades.VERDE || 0
+                ],
+                backgroundColor: ["#e11d48", "#f97316", "#eab308", "#10b981"],
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error al cargar analítica epidemiológica:", err);
       }
     }
   </script>
