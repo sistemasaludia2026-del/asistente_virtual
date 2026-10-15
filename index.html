@@ -19,14 +19,14 @@
       animation: soundwave 1s infinite ease-in-out;
     }
 
-    /* EFECTO PULSANTE DE SIRENA PARA AMBULANCIA */
+    /* EFECTO PULSANTE DE SIRENA ROJA */
     @keyframes emergency-pulse {
       0%, 100% {
-        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.8);
         border-color: rgba(225, 29, 72, 1);
       }
       50% {
-        box-shadow: 0 0 0 12px rgba(225, 29, 72, 0);
+        box-shadow: 0 0 0 14px rgba(225, 29, 72, 0);
         border-color: rgba(254, 205, 211, 1);
       }
     }
@@ -53,9 +53,9 @@
   <main class="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative pb-8">
 
     <!-- ============================================== -->
-    <!-- CABECERA (HEAD) PRINCIPAL                      -->
+    <!-- CABECERA PRINCIPAL (HEAD)                      -->
     <!-- ============================================== -->
-    <header class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-5 rounded-b-3xl shadow-md transition-all duration-300" id="app-main-header">
+    <header class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-5 rounded-b-3xl shadow-md transition-all duration-300 relative" id="app-main-header">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
           <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -71,7 +71,7 @@
         </span>
       </div>
 
-      <!-- ALERTA DE AMBULANCIA INTEGRADA DIRECTAMENTE EN EL HEAD -->
+      <!-- ALERTA DE AMBULANCIA DIRECTAMENTE EN EL HEAD -->
       <div id="header-ambulancia-alert" class="hidden mt-3 p-3 bg-rose-700/95 border-2 border-rose-300 rounded-2xl shadow-xl siren-blink transition-all">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2.5">
@@ -408,7 +408,7 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <!-- FASE 1: VISOR DE CÁMARA VISIBLE + DETECCIÓN DE COBERTURA TOTAL -->
+        <!-- FASE 1: PPG -->
         <div id="step-ppg" class="space-y-3 text-center">
           <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mx-auto">
             <i data-lucide="activity" class="w-5 h-5"></i>
@@ -607,8 +607,8 @@
     lucide.createIcons();
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
-    let ultimoTriajeMonitoreado = localStorage.getItem("salud_triaje_activo") || null;
     let pollingInterval = null;
+    let audioContextGlobal = null;
 
     let ppgStream = null;
     let ppgAnimId = null;
@@ -638,10 +638,28 @@
     let preguntasActuales = [];
     let respuestasSeleccionadas = {};
 
-    // SINTETIZADOR DE TONOS ACÚSTICOS NATIVOS (WEB AUDIO API)
+    // ==============================================
+    // DESBLOQUEADOR DE AUDIO (AUTOPLAY POLICY FIX)
+    // ==============================================
+    function getAudioContext() {
+      if (!audioContextGlobal) {
+        audioContextGlobal = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContextGlobal.state === "suspended") {
+        audioContextGlobal.resume();
+      }
+      return audioContextGlobal;
+    }
+
+    // Desbloquear audio con el primer toque en la pantalla
+    window.addEventListener("click", () => { getAudioContext(); }, { once: false });
+    window.addEventListener("touchstart", () => { getAudioContext(); }, { once: false });
+
     function reproducirTonoNotificacion(tipo = "chime") {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = getAudioContext();
+        if (ctx.state === "suspended") ctx.resume();
+
         if (tipo === "chime") {
           const osc1 = ctx.createOscillator();
           const osc2 = ctx.createOscillator();
@@ -650,7 +668,7 @@
           osc2.type = "sine";
           osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
           osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.12); // G5
-          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
           osc1.connect(gain); 
           osc2.connect(gain); 
@@ -667,7 +685,7 @@
           osc.frequency.linearRampToValueAtTime(950, ctx.currentTime + 0.3);
           osc.frequency.linearRampToValueAtTime(650, ctx.currentTime + 0.6);
           osc.frequency.linearRampToValueAtTime(950, ctx.currentTime + 0.9);
-          gain.gain.setValueAtTime(0.28, ctx.currentTime);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime);
           gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 1.25);
           osc.connect(gain); 
           gain.connect(ctx.destination);
@@ -774,7 +792,7 @@
       try {
         return JSON.parse(rawText);
       } catch (err) {
-        throw new Error("Error en servidor Apps Script. Verifica que esté desplegado como 'Cualquier usuario'.");
+        throw new Error("Error en servidor Apps Script.");
       }
     }
 
@@ -853,11 +871,6 @@
       document.getElementById("user-display-cronicas").innerText = user.enfermedadesCronicas || "Ninguna";
       document.getElementById("user-display-alergias").innerText = user.alergias || "Ninguna";
       switchView("view-home");
-
-      if (ultimoTriajeMonitoreado) {
-        document.getElementById("banner-revision-activa").classList.remove("hidden");
-        document.getElementById("banner-triaje-id").innerText = ultimoTriajeMonitoreado;
-      }
     }
 
     function logout() {
@@ -867,6 +880,9 @@
       switchView("view-login");
     }
 
+    // =======================================================
+    // HISTORIAL Y DETECCIÓN INTELIGENTE UNIVERSAL
+    // =======================================================
     async function cargarHistorial() {
       if (!currentUser) return;
       const listaBox = document.getElementById("historial-lista");
@@ -880,6 +896,27 @@
 
         if (res.success && res.historial) {
           countLabel.innerText = res.historial.length;
+
+          // BUSCADOR UNIVERSAL: ¿Hay CUALQUIER ambulancia despachada en las consultas del paciente?
+          const ambActiva = res.historial.find(h => h.estado === "AMBULANCIA_DESPACHADA");
+          const ambDescartadaId = localStorage.getItem("salud_amb_descartada_id");
+
+          if (ambActiva && ambActiva.idTriaje !== ambDescartadaId) {
+            mostrarAmbulanciaEnHome(ambActiva);
+          } else if (!ambActiva) {
+            document.getElementById("header-ambulancia-alert").classList.add("hidden");
+            document.getElementById("box-ambulancia-home").classList.add("hidden");
+          }
+
+          // ¿Hay alguna consulta PENDIENTE?
+          const pendienteActiva = res.historial.find(h => h.estado === "PENDIENTE");
+          if (pendienteActiva) {
+            document.getElementById("banner-revision-activa").classList.remove("hidden");
+            document.getElementById("banner-triaje-id").innerText = pendienteActiva.idTriaje;
+          } else {
+            document.getElementById("banner-revision-activa").classList.add("hidden");
+          }
+
           if (res.historial.length === 0) {
             listaBox.innerHTML = `
               <div class="text-center py-8 text-slate-400 text-xs">
@@ -888,17 +925,6 @@
               </div>`;
             lucide.createIcons();
             return;
-          }
-
-          // DETECCIÓN INTELIGENTE: Si la última consulta tiene ambulancia en ruta, encender alerta en el HEAD
-          if (res.historial[0] && res.historial[0].estado === "AMBULANCIA_DESPACHADA") {
-            const dataAmb = {
-              estado: "AMBULANCIA_DESPACHADA",
-              notasClinicas: res.historial[0].notasClinicas,
-              idTriaje: res.historial[0].idTriaje
-            };
-            localStorage.setItem("salud_alerta_amb", JSON.stringify(dataAmb));
-            mostrarAmbulanciaEnHome(dataAmb);
           }
 
           listaBox.innerHTML = "";
@@ -942,7 +968,8 @@
     // =======================================================
     function restaurarNotificacionesGuardadas() {
       const ambData = JSON.parse(localStorage.getItem("salud_alerta_amb") || "null");
-      if (ambData) {
+      const ambDescartadaId = localStorage.getItem("salud_amb_descartada_id");
+      if (ambData && ambData.idTriaje !== ambDescartadaId) {
         mostrarAmbulanciaEnHome(ambData);
       }
 
@@ -953,19 +980,20 @@
     }
 
     function mostrarAmbulanciaEnHome(data) {
-      let unidad = "SAMU Móvil";
+      let unidad = "SAMU Móvil Alfa";
       let eta = "10 a 15 minutos";
-      let indicaciones = data.notasClinicas || "Mantener acceso despejado y paciente en reposo.";
+      let indicaciones = data.notasClinicas || data.notas || "Mantener acceso despejado y paciente en reposo.";
 
-      if (data.notasClinicas) {
-        const matchU = data.notasClinicas.match(/Unidad\s*([^\|\]]+)/i);
+      const textoBuscar = data.notasClinicas || data.notas || "";
+      if (textoBuscar) {
+        const matchU = textoBuscar.match(/Unidad\s*([^\|\]]+)/i);
         if (matchU) unidad = matchU[1].trim();
 
-        const matchE = data.notasClinicas.match(/ETA:\s*([^\|\]]+)/i) || data.notasClinicas.match(/LLEGADA:\s*([^\|\]]+)/i);
+        const matchE = textoBuscar.match(/ETA:\s*([^\|\]]+)/i) || textoBuscar.match(/LLEGADA:\s*([^\|\]]+)/i);
         if (matchE) eta = matchE[1].trim();
       }
 
-      // 1. Mostrar en el HEAD de la aplicación
+      // 1. Mostrar en el HEAD
       document.getElementById("header-ambulancia-alert").classList.remove("hidden");
       document.getElementById("head-amb-eta-label").innerText = `Llegada estimada: ${eta}`;
       document.getElementById("head-amb-unidad-label").innerText = unidad;
@@ -980,7 +1008,11 @@
     }
 
     function concluirAlertaAmbulancia() {
-      if (confirm("¿Confirmas que la ambulancia o los paramédicos ya llegaron al domicilio?")) {
+      if (confirm("¿Confirmas que la ambulancia o el personal médico ya llegó al domicilio?")) {
+        const ambData = JSON.parse(localStorage.getItem("salud_alerta_amb") || "{}");
+        if (ambData.idTriaje) {
+          localStorage.setItem("salud_amb_descartada_id", ambData.idTriaje);
+        }
         document.getElementById("header-ambulancia-alert").classList.add("hidden");
         document.getElementById("box-ambulancia-home").classList.add("hidden");
         localStorage.removeItem("salud_alerta_amb");
@@ -991,7 +1023,7 @@
       document.getElementById("box-derivacion-home").classList.remove("hidden");
       document.getElementById("home-notif-area").innerText = data.especialidadFinal || "Medicina General";
       document.getElementById("home-notif-enfermera").innerText = data.enfermeraResponsable || "Lic. de Guardia";
-      document.getElementById("home-notif-indicaciones").innerText = data.notasClinicas || "Sin indicaciones adicionales.";
+      document.getElementById("home-notif-indicaciones").innerText = data.notasClinicas || data.notas || "Sin indicaciones adicionales.";
       lucide.createIcons();
     }
 
@@ -1001,46 +1033,61 @@
     }
 
     // ==============================================
-    // MONITOR EN TIEMPO REAL (SMART POLLING)
+    // MONITOR EN TIEMPO REAL (SMART POLLING POR DNI)
     // ==============================================
     function iniciarMonitoreoSegundoPlano() {
       clearInterval(pollingInterval);
       pollingInterval = setInterval(async () => {
-        if (!ultimoTriajeMonitoreado) return;
+        if (!currentUser) return;
 
         try {
           const res = await callBackend({
-            action: "consultar_estado_triaje",
-            idTriaje: ultimoTriajeMonitoreado
+            action: "obtener_historial_paciente",
+            dni: currentUser.dni
           });
 
-          if (res.success && (res.estado === "DERIVADO" || res.estado === "AMBULANCIA_DESPACHADA")) {
-            localStorage.removeItem("salud_triaje_activo");
-            ultimoTriajeMonitoreado = null;
-            document.getElementById("banner-revision-activa").classList.add("hidden");
+          if (res.success && res.historial && res.historial.length > 0) {
+            // 1. Verificar si hay ambulancia despachada
+            const ambActiva = res.historial.find(h => h.estado === "AMBULANCIA_DESPACHADA");
+            const ambDescartadaId = localStorage.getItem("salud_amb_descartada_id");
 
-            dispararNotificacionResolucion(res);
-            cargarHistorial();
+            if (ambActiva && ambActiva.idTriaje !== ambDescartadaId) {
+              const alertaPrevia = localStorage.getItem("salud_alerta_amb");
+              if (!alertaPrevia) {
+                // Alerta nueva en tiempo real: Sonar sirena y abrir popup
+                localStorage.setItem("salud_alerta_amb", JSON.stringify(ambActiva));
+                mostrarAmbulanciaEnHome(ambActiva);
+                reproducirTonoNotificacion("sirena");
+                dispararPopupNotificacion(ambActiva, true);
+              } else {
+                mostrarAmbulanciaEnHome(ambActiva);
+              }
+            }
+
+            // 2. Verificar si hay derivación reciente
+            const derivActiva = res.historial.find(h => h.estado === "DERIVADO");
+            const ultimaDerivId = localStorage.getItem("salud_deriv_registrada_id");
+
+            if (derivActiva && derivActiva.idTriaje !== ultimaDerivId) {
+              localStorage.setItem("salud_deriv_registrada_id", derivActiva.idTriaje);
+              localStorage.setItem("salud_notif_deriv", JSON.stringify(derivActiva));
+              mostrarDerivacionEnHome(derivActiva);
+              reproducirTonoNotificacion("chime");
+              dispararPopupNotificacion(derivActiva, false);
+            }
           }
         } catch (e) {
           console.warn("Polling error:", e);
         }
-      }, 9000); // 9 segundos
+      }, 7000); // Consulta cada 7 segundos
     }
 
-    function dispararNotificacionResolucion(data) {
-      const isAmbulancia = data.estado === "AMBULANCIA_DESPACHADA";
+    function dispararPopupNotificacion(data, isAmbulancia) {
       const cardBox = document.getElementById("notif-card-box");
       const iconBox = document.getElementById("notif-icon-box");
       const badge = document.getElementById("notif-badge");
 
       if (isAmbulancia) {
-        // 1. Guardar y mostrar en el HEAD y en el Home
-        localStorage.setItem("salud_alerta_amb", JSON.stringify(data));
-        mostrarAmbulanciaEnHome(data);
-        reproducirTonoNotificacion("sirena");
-
-        // 2. Configurar Popup Modal
         cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-4 border-rose-600 siren-blink transition-all";
         iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-rose-100 text-rose-600";
         iconBox.innerHTML = `<i data-lucide="siren" class="w-8 h-8 animate-bounce"></i>`;
@@ -1050,12 +1097,6 @@
         document.getElementById("notif-subtitulo").innerText = "El equipo paramédico está en ruta hacia tu ubicación.";
         hablarAsistente("Atención: Una unidad de ambulancia ha sido enviada a tu auxilio. Mantén la calma y la puerta de acceso despejada.");
       } else {
-        // 1. Guardar y mostrar en la Casilla de Derivación del Home
-        localStorage.setItem("salud_notif_deriv", JSON.stringify(data));
-        mostrarDerivacionEnHome(data);
-        reproducirTonoNotificacion("chime");
-
-        // 2. Configurar Popup Modal
         cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-2 border-emerald-500 transition-all";
         iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
         iconBox.innerHTML = `<i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>`;
@@ -1068,7 +1109,7 @@
 
       document.getElementById("notif-area").innerText = data.especialidadFinal || "Medicina General";
       document.getElementById("notif-enfermera").innerText = data.enfermeraResponsable || "Lic. de Guardia";
-      document.getElementById("notif-indicaciones").innerText = data.notasClinicas || "Sigue las recomendaciones del profesional de salud.";
+      document.getElementById("notif-indicaciones").innerText = data.notasClinicas || data.notas || "Sigue las recomendaciones del profesional de salud.";
 
       document.getElementById("modal-notificacion-vivo").classList.remove("hidden");
       lucide.createIcons();
@@ -1079,7 +1120,7 @@
     }
 
     // ==============================================
-    // FLUJO DE TRIAJE
+    // FLUJO DE TRIAJE (PPG + VOZ + CUESTIONARIO)
     // ==============================================
     function iniciarFlujoTriaje() {
       document.getElementById("txt-sintomas").value = "";
@@ -1583,8 +1624,6 @@
         if (res.success && res.evaluacion) {
           resultadoIA = res.evaluacion;
           
-          ultimoTriajeMonitoreado = res.idTriaje;
-          localStorage.setItem("salud_triaje_activo", res.idTriaje);
           document.getElementById("banner-revision-activa").classList.remove("hidden");
           document.getElementById("banner-triaje-id").innerText = res.idTriaje;
 
