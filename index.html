@@ -18,12 +18,20 @@
     .wave-bar {
       animation: soundwave 1s infinite ease-in-out;
     }
+    /* Animación de alerta para ambulancia */
+    @keyframes pulse-sirena {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); }
+      50% { transform: scale(1.03); box-shadow: 0 0 0 14px rgba(225, 29, 72, 0); }
+    }
+    .sirena-pulse-box {
+      animation: pulse-sirena 1.5s infinite;
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center antialiased select-none">
 
   <script>
-    // PEGA AQUÍ TU URL DE APPS SCRIPT:
+    // URL DE TU DESPLIEGUE ACTIVO EN APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzlc9J-RXf79N-8DtoiGAKB6c0AR1gCrbqscobUy3qdfyz8KaW3VkG7MTtrVdhLzyf/exec";
   </script>
 
@@ -53,7 +61,21 @@
       <span id="alert-text">Mensaje</span>
     </div>
 
-    <!-- VISTA LOGIN -->
+    <!-- BANNER DE CONSULTA EN REVISIÓN ACTIVA -->
+    <div id="banner-revision-activa" class="hidden mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+        <div class="text-[11px] leading-tight text-amber-900">
+          <p class="font-bold">Consulta médica en revisión</p>
+          <p class="text-amber-700">Enfermería está evaluando tu caso...</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md" id="banner-triaje-id">TRJ-XXXX</span>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VISTA 1: LOGIN PACIENTE                        -->
+    <!-- ============================================== -->
     <section id="view-login" class="p-6 flex-1 flex flex-col justify-center space-y-6">
       <div class="space-y-1">
         <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Bienvenido</h2>
@@ -93,7 +115,9 @@
       </div>
     </section>
 
-    <!-- VISTA REGISTRO -->
+    <!-- ============================================== -->
+    <!-- VISTA 2: REGISTRO PACIENTE                     -->
+    <!-- ============================================== -->
     <section id="view-register" class="hidden p-6 flex-1 flex flex-col space-y-4">
       <button onclick="switchView('view-login')" class="text-slate-400 hover:text-slate-600 text-xs flex items-center space-x-1">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -154,7 +178,9 @@
       </form>
     </section>
 
-    <!-- VISTA PRINCIPAL PACIENTE CON PESTAÑAS -->
+    <!-- ============================================== -->
+    <!-- VISTA 3: PRINCIPAL PACIENTE                    -->
+    <!-- ============================================== -->
     <section id="view-home" class="hidden p-5 flex-1 flex flex-col space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
@@ -220,9 +246,42 @@
       </div>
     </section>
 
-    <!-- ========================================== -->
-    <!-- MODAL DE TRIAJE -->
-    <!-- ========================================== -->
+    <!-- ============================================== -->
+    <!-- MODAL DE NOTIFICACIÓN EN TIEMPO REAL (ENFERMERÍA) -->
+    <!-- ============================================== -->
+    <div id="modal-notificacion-vivo" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div id="notif-card-box" class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-2 border-emerald-500 transition-all">
+        
+        <div id="notif-icon-box" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600">
+          <i id="notif-icon" data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>
+        </div>
+        
+        <div>
+          <span id="notif-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-600 text-white tracking-wider">
+            Cita Confirmada
+          </span>
+          <h3 id="notif-titulo" class="text-base font-black text-slate-800 mt-2">¡Tu consulta fue atendida!</h3>
+          <p id="notif-subtitulo" class="text-xs text-slate-500 mt-1">El personal de enfermería ha emitido tu orden médica:</p>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-left space-y-2 text-xs">
+          <p><strong class="text-slate-700">Especialidad Destino:</strong> <span id="notif-area" class="font-extrabold text-teal-700">Medicina General</span></p>
+          <p><strong class="text-slate-700">Enfermera Responsable:</strong> <span id="notif-enfermera" class="text-slate-800">Lic. de Guardia</span></p>
+          <div class="pt-2 border-t border-slate-200 space-y-1">
+            <strong class="text-slate-700 block">Detalle de la Cita & Recomendaciones:</strong>
+            <p id="notif-indicaciones" class="text-slate-700 bg-white p-2.5 rounded-xl border border-slate-100 leading-relaxed italic"></p>
+          </div>
+        </div>
+
+        <button onclick="cerrarModalNotificacion()" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition shadow-md">
+          Entendido / Ir a Mis Registros
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL DE TRIAJE (PPG + VOZ + CUESTIONARIO + FOTO) -->
+    <!-- ============================================== -->
     <div id="modal-triaje" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl space-y-4 relative max-h-[94vh] overflow-y-auto">
         
@@ -284,8 +343,8 @@
           </div>
         </div>
 
-        <!-- FASE 2: RELATO DE VOZ (TU CÓDIGO FUNCIONAL) -->
-        <div id="step-sintomas" class="space-y-4 text-center">
+        <!-- FASE 2: RELATO DE VOZ -->
+        <div id="step-sintomas" class="hidden space-y-4 text-center">
           <div>
             <span class="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">
               Paso 2: ¿Qué sientes?
@@ -374,7 +433,7 @@
           </button>
         </div>
 
-        <!-- FASE 5: RESULTADO FINAL (ORIENTACIÓN CLARA Y CUIDADOS AL PACIENTE) -->
+        <!-- FASE 5: RESULTADO FINAL -->
         <div id="step-resultado" class="hidden space-y-3.5 text-center">
           <div id="res-badge-icon" class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto">
             <i id="res-icon" data-lucide="check-circle" class="w-6 h-6"></i>
@@ -386,7 +445,6 @@
             <p id="res-justificacion" class="text-xs text-slate-500 mt-1 leading-relaxed">Justificación médica</p>
           </div>
 
-          <!-- TARJETA ORIENTACIÓN CLARA Y CUIDADOS AL PACIENTE -->
           <div class="bg-gradient-to-br from-teal-50/90 to-slate-50 border border-teal-200 rounded-2xl p-3.5 text-left space-y-2 shadow-sm">
             <div class="flex items-center justify-between border-b border-teal-100 pb-2">
               <span class="font-bold text-teal-900 text-xs flex items-center space-x-1.5">
@@ -404,7 +462,7 @@
           </div>
 
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left space-y-1 text-xs">
-            <p><strong class="text-slate-700">Especialidad Recomendada:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
+            <p><strong class="text-slate-700">Especialidad Sugerida:</strong> <span id="res-especialidad" class="font-bold text-teal-700">Medicina General</span></p>
             <p><strong class="text-slate-700">Pulso Registrado:</strong> <span id="res-bpm">75 BPM</span></p>
           </div>
 
@@ -423,13 +481,16 @@
 
   </main>
 
-  <!-- ========================================== -->
-  <!-- CONTROLADOR JS -->
-  <!-- ========================================== -->
+  <!-- ============================================== -->
+  <!-- CONTROLADOR JAVASCRIPT                         -->
+  <!-- ============================================== -->
   <script>
     lucide.createIcons();
 
     let currentUser = JSON.parse(localStorage.getItem("salud_paciente") || "null");
+    let ultimoTriajeMonitoreado = localStorage.getItem("salud_triaje_activo") || null;
+    let pollingInterval = null;
+
     let ppgStream = null;
     let ppgAnimId = null;
     let bpmCalculado = 75;
@@ -445,7 +506,7 @@
     let ultimoPicoTiempo = 0;
     let lenteCompletamenteCubierto = false;
 
-    // MOTOR DE VOZ TUYO FUNCIONAL
+    // MOTOR DE VOZ
     let recognition = null;
     let microfonoActivo = false;
     let textoBaseCuadro = "";
@@ -457,6 +518,49 @@
     // CUESTIONARIO
     let preguntasActuales = [];
     let respuestasSeleccionadas = {};
+
+    // SINTETIZADOR DE TONOS ACÚSTICOS NATIVOS (WEB AUDIO API)
+    function reproducirTonoNotificacion(tipo = "chime") {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (tipo === "chime") {
+          // Tono agradable bifónico de mensaje confirmado (Do - Sol)
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc1.type = "sine"; 
+          osc2.type = "sine";
+          osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+          osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.12); // G5
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
+          osc1.connect(gain); 
+          osc2.connect(gain); 
+          gain.connect(ctx.destination);
+          osc1.start(); 
+          osc1.stop(ctx.currentTime + 0.12);
+          osc2.start(ctx.currentTime + 0.12); 
+          osc2.stop(ctx.currentTime + 0.85);
+        } else if (tipo === "sirena") {
+          // Sirena de ambulancia en camino (modulación periódica de emergencia)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(650, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(950, ctx.currentTime + 0.3);
+          osc.frequency.linearRampToValueAtTime(650, ctx.currentTime + 0.6);
+          osc.frequency.linearRampToValueAtTime(950, ctx.currentTime + 0.9);
+          gain.gain.setValueAtTime(0.28, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 1.25);
+          osc.connect(gain); 
+          gain.connect(ctx.destination);
+          osc.start(); 
+          osc.stop(ctx.currentTime + 1.25);
+        }
+      } catch (e) {
+        console.warn("Audio no disponible:", e);
+      }
+    }
 
     function hablarAsistente(texto) {
       if (!('speechSynthesis' in window)) return;
@@ -481,6 +585,7 @@
       if (currentUser) {
         renderHome(currentUser);
         cargarHistorial();
+        iniciarMonitoreoSegundoPlano();
       }
     });
 
@@ -546,7 +651,7 @@
       try {
         return JSON.parse(rawText);
       } catch (err) {
-        throw new Error("Error en servidor. Verifica que Apps Script esté desplegado como 'Cualquier usuario' y termine en /exec.");
+        throw new Error("Error en servidor Apps Script. Verifica que esté desplegado como 'Cualquier usuario'.");
       }
     }
 
@@ -558,9 +663,9 @@
 
       const payload = {
         action: "register_patient",
-        dni: document.getElementById("reg-dni").value,
-        password: document.getElementById("reg-pass").value,
-        nombreCompleto: document.getElementById("reg-nombre").value,
+        dni: document.getElementById("reg-dni").value.trim(),
+        password: document.getElementById("reg-pass").value.trim(),
+        nombreCompleto: document.getElementById("reg-nombre").value.trim(),
         edad: document.getElementById("reg-edad").value,
         sexo: document.getElementById("reg-sexo").value,
         telefono: document.getElementById("reg-tel").value,
@@ -594,8 +699,8 @@
 
       const payload = {
         action: "login_patient",
-        dni: document.getElementById("login-dni").value,
-        password: document.getElementById("login-pass").value
+        dni: document.getElementById("login-dni").value.trim(),
+        password: document.getElementById("login-pass").value.trim()
       };
 
       try {
@@ -605,6 +710,7 @@
           currentUser = res.user;
           renderHome(res.user);
           cargarHistorial();
+          iniciarMonitoreoSegundoPlano();
         } else {
           showAlert(res.message, "error");
         }
@@ -623,9 +729,15 @@
       document.getElementById("user-display-cronicas").innerText = user.enfermedadesCronicas || "Ninguna";
       document.getElementById("user-display-alergias").innerText = user.alergias || "Ninguna";
       switchView("view-home");
+
+      if (ultimoTriajeMonitoreado) {
+        document.getElementById("banner-revision-activa").classList.remove("hidden");
+        document.getElementById("banner-triaje-id").innerText = ultimoTriajeMonitoreado;
+      }
     }
 
     function logout() {
+      clearInterval(pollingInterval);
       localStorage.removeItem("salud_paciente");
       currentUser = null;
       switchView("view-login");
@@ -662,6 +774,8 @@
             let estadoBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">🟡 En Revisión</span>`;
             if (item.estado === "DERIVADO") {
               estadoBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">🟢 Cita Derivada</span>`;
+            } else if (item.estado === "AMBULANCIA_DESPACHADA") {
+              estadoBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white animate-pulse">🚑 Ambulancia en Camino</span>`;
             }
 
             card.innerHTML = `
@@ -688,9 +802,84 @@
       }
     }
 
-    // ==========================================
+    // ==============================================
+    // MONITOR INTELIGENTE EN TIEMPO REAL (SMART POLLING)
+    // ==============================================
+    function iniciarMonitoreoSegundoPlano() {
+      clearInterval(pollingInterval);
+      pollingInterval = setInterval(async () => {
+        if (!ultimoTriajeMonitoreado) return;
+
+        try {
+          const res = await callBackend({
+            action: "consultar_estado_triaje",
+            idTriaje: ultimoTriajeMonitoreado
+          });
+
+          if (res.success && (res.estado === "DERIVADO" || res.estado === "AMBULANCIA_DESPACHADA")) {
+            // El caso fue atendido por la enfermera
+            localStorage.removeItem("salud_triaje_activo");
+            ultimoTriajeMonitoreado = null;
+            document.getElementById("banner-revision-activa").classList.add("hidden");
+
+            dispararNotificacionResolucion(res);
+            cargarHistorial();
+          }
+        } catch (e) {
+          console.warn("Polling error:", e);
+        }
+      }, 9000); // Consulta cada 9 segundos
+    }
+
+    function dispararNotificacionResolucion(data) {
+      const isAmbulancia = data.estado === "AMBULANCIA_DESPACHADA";
+      const cardBox = document.getElementById("notif-card-box");
+      const iconBox = document.getElementById("notif-icon-box");
+      const badge = document.getElementById("notif-badge");
+
+      if (isAmbulancia) {
+        reproducirTonoNotificacion("sirena");
+        cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-4 border-rose-600 sirena-pulse-box transition-all";
+        iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-rose-100 text-rose-600";
+        iconBox.innerHTML = `<i data-lucide="siren" class="w-8 h-8 animate-bounce"></i>`;
+        badge.className = "px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white tracking-wider";
+        badge.innerText = "🚨 AMBULANCIA EN CAMINO";
+        document.getElementById("notif-titulo").innerText = "¡Unidad de Emergencia Despachada!";
+        document.getElementById("notif-subtitulo").innerText = "La ambulancia y el equipo paramédico están en ruta hacia tu ubicación.";
+      } else {
+        reproducirTonoNotificacion("chime");
+        cardBox.className = "w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-center border-2 border-emerald-500 transition-all";
+        iconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto bg-emerald-100 text-emerald-600";
+        iconBox.innerHTML = `<i data-lucide="bell-ring" class="w-8 h-8 animate-bounce"></i>`;
+        badge.className = "px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-600 text-white tracking-wider";
+        badge.innerText = "Cita Confirmada";
+        document.getElementById("notif-titulo").innerText = "¡Tu consulta fue atendida!";
+        document.getElementById("notif-subtitulo").innerText = "El personal de enfermería ha emitido tu orden médica:";
+      }
+
+      document.getElementById("notif-area").innerText = data.especialidadFinal || "Medicina General";
+      document.getElementById("notif-enfermera").innerText = data.enfermeraResponsable || "Lic. de Guardia";
+      document.getElementById("notif-indicaciones").innerText = data.notasClinicas || "Sigue las recomendaciones del profesional de salud.";
+
+      document.getElementById("modal-notificacion-vivo").classList.remove("hidden");
+      lucide.createIcons();
+
+      // Locución auditiva
+      if (isAmbulancia) {
+        hablarAsistente("Atención: Una unidad de ambulancia ha sido despachada a tu auxilio. Por favor mantén la calma y la puerta de acceso accesible.");
+      } else {
+        hablarAsistente(`Tu orden médica ha sido confirmada para ${data.especialidadFinal}. Ya puedes revisar el horario y tus indicaciones.`);
+      }
+    }
+
+    function cerrarModalNotificacion() {
+      document.getElementById("modal-notificacion-vivo").classList.add("hidden");
+      cambiarPestanaHome("tab-historial");
+    }
+
+    // ==============================================
     // FLUJO DE TRIAJE
-    // ==========================================
+    // ==============================================
     function iniciarFlujoTriaje() {
       document.getElementById("txt-sintomas").value = "";
       detenerMicrofonoForzado();
@@ -717,9 +906,9 @@
       lucide.createIcons();
     }
 
-    // ==========================================
+    // ==============================================
     // SENSOR PPG CON VISIÓN EN VIVO
-    // ==========================================
+    // ==============================================
     async function iniciarSensorPPGConVisionReal() {
       const status = document.getElementById("ppg-status");
       const progress = document.getElementById("ppg-progress");
@@ -889,9 +1078,9 @@
       hablarAsistente("Pulso confirmado. Toca el micrófono verde para empezar a hablar. Habla a tu ritmo y vuelve a tocarlo cuando termines.");
     }
 
-    // =========================================================================
-    // TU CÓDIGO DE VOZ FUNCIONAL
-    // =========================================================================
+    // ==============================================
+    // MOTOR DE DICTADO POR VOZ SIN DUPLICACIONES
+    // ==============================================
     function setIconoMic(nombre) {
       const btn = document.getElementById("btn-mic-action");
       btn.innerHTML = `<i data-lucide="${nombre}" class="w-7 h-7"></i>`;
@@ -936,7 +1125,7 @@
     function iniciarMicrofono() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        alert("Tu navegador no soporta dictado por voz. Usa Chrome o escribe tus síntomas.");
+        alert("Tu navegador no soporta dictado por voz. Escribe directamente tus síntomas.");
         return;
       }
 
@@ -996,10 +1185,10 @@
         console.warn("Speech error:", e.error);
         if (e.error === "not-allowed" || e.error === "service-not-allowed") {
           microfonoActivo = false;
-          alert("No hay permiso para usar el micrófono. Actívalo en los permisos del navegador.");
+          alert("Permiso de micrófono denegado en el navegador.");
         } else if (e.error === "network") {
           microfonoActivo = false;
-          alert("El dictado por voz necesita internet.");
+          alert("El dictado por voz requiere conexión a internet.");
         }
       };
 
@@ -1022,7 +1211,6 @@
       try {
         rec.start();
       } catch (err) {
-        console.warn("No se pudo iniciar el reconocimiento:", err);
         microfonoActivo = false;
         finalizarMicrofonoUI();
       }
@@ -1074,9 +1262,9 @@
       estiloMicEnReposo();
     }
 
-    // ==========================================
+    // ==============================================
     // CUESTIONARIO ADAPTATIVO
-    // ==========================================
+    // ==============================================
     async function solicitarCuestionarioIA() {
       if (microfonoActivo) {
         alert("Toca el botón rojo para terminar de hablar antes de continuar.");
@@ -1193,6 +1381,13 @@
         const res = await callBackend(payload);
         if (res.success && res.evaluacion) {
           resultadoIA = res.evaluacion;
+          
+          // Activamos el tracking del triaje para que el polling lo escuche
+          ultimoTriajeMonitoreado = res.idTriaje;
+          localStorage.setItem("salud_triaje_activo", res.idTriaje);
+          document.getElementById("banner-revision-activa").classList.remove("hidden");
+          document.getElementById("banner-triaje-id").innerText = res.idTriaje;
+
           cargarHistorial();
 
           if (resultadoIA.requiere_foto) {
@@ -1231,7 +1426,6 @@
       mostrarResultadoFinal(resultadoIA);
     }
 
-    // RESULTADO FINAL CON INFORME CLÍNICO Y ORIENTACIÓN CLARA
     function mostrarResultadoFinal(evaluacion) {
       mostrarPasoModal("step-resultado");
 
@@ -1260,14 +1454,15 @@
       document.getElementById("res-especialidad").innerText = evaluacion.especialidad_derivacion;
       document.getElementById("res-bpm").innerText = bpmCalculado + " BPM (Basal: " + (currentUser?.bpmBasal || 75) + " BPM)";
 
-      // Colocar la orientación clara y empática
       document.getElementById("res-orientacion-paciente").innerText = evaluacion.orientacion_paciente || "Guarda reposo y mantén hidratación adecuada hasta tu evaluación médica.";
 
-      hablarAsistente(`Tu evaluación ha concluido. El sistema sugiere una derivación a ${evaluacion.especialidad_derivacion}. Tu caso ya fue remitido a enfermería.`);
+      hablarAsistente(`Tu evaluación ha concluido. Tu caso ya fue remitido a enfermería. Mantén tu aplicación abierta para recibir tu confirmación médica.`);
       lucide.createIcons();
     }
 
-    // GPS
+    // ==============================================
+    // COORDENADAS GPS
+    // ==============================================
     function obtenerCoordenadasGPS(callback) {
       if (!navigator.geolocation) {
         alert("Tu dispositivo no soporta geolocalización GPS.");
