@@ -608,7 +608,7 @@
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
 
-      const mensaje = `Atención enfermería. Nuevo registro del paciente ${nombre}. Sospecha de la inteligencia artificial: ${sospecha}. Gravedad: ${severidad}.`;
+      const mensaje = `Atención enfermería. Nuevo registro del paciente ${nombre}. Según el análisis y cuestionario se sospecha de: ${sospecha}. Gravedad: ${severidad}.`;
       const utterance = new SpeechSynthesisUtterance(mensaje);
       utterance.lang = "es-PE";
       utterance.rate = 0.94;
